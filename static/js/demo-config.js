@@ -16,6 +16,9 @@ class DemoConfig {
             || window.location.hostname === '127.0.0.1'
             || window.location.hostname === '';
         
+        // Check if on GitHub Pages
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        
         // Check for explicit mode in URL parameter
         const urlParams = new URLSearchParams(window.location.search);
         const modeParam = urlParams.get('mode');
@@ -30,8 +33,10 @@ class DemoConfig {
             return storedMode;
         }
         
-        // Default: local if on localhost, remote otherwise
-        return isLocalhost ? 'local' : 'remote';
+        // Default: 
+        // - remote if on GitHub Pages or non-localhost domain
+        // - local only if explicitly on localhost
+        return (isGitHubPages || !isLocalhost) ? 'remote' : 'local';
     }
 
     getConfig() {
