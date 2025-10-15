@@ -267,6 +267,12 @@ htmlcov/
 .coverage
 
 # ============
+# IDE & Development Tools
+# ============
+# Specstory (AI development tool)
+.specstory/
+
+# ============
 # Miscellaneous
 # ============
 # Security & sensitive files

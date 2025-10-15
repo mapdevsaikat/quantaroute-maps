@@ -31,7 +31,7 @@ This comprehensive demo showcases why QuantaRoute is the **most efficient routin
 ### **🎯 Enhanced Navigation Demo (Recommended)**
 
 ```bash
-cd demo-app
+cd quantaroute-maps
 python start_navigation_demo.py
 ```
 
