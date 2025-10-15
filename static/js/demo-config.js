@@ -8,6 +8,14 @@ class DemoConfig {
         // Auto-detect environment or use config
         this.mode = this.detectMode();
         this.config = this.getConfig();
+        
+        // Debug logging
+        console.log('🔧 DemoConfig initialized:', {
+            mode: this.mode,
+            apiBaseUrl: this.config.apiBaseUrl,
+            authRequired: this.config.authRequired,
+            apiKey: this.config.apiKey ? `${this.config.apiKey.substring(0, 20)}...` : 'none'
+        });
     }
 
     detectMode() {
@@ -103,6 +111,13 @@ class DemoConfig {
         // Add API key for remote mode using Bearer token format (FastAPI standard)
         if (this.mode === 'remote' && this.config.authRequired && this.config.apiKey) {
             headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+            console.log('✅ Authorization header added for remote mode');
+        } else {
+            console.log('⚠️ No Authorization header added:', {
+                mode: this.mode,
+                authRequired: this.config.authRequired,
+                hasApiKey: !!this.config.apiKey
+            });
         }
 
         return headers;

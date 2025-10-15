@@ -61,6 +61,11 @@ class QuantaRouteDemo {
             ...(options.headers || {})
         };
 
+        console.log(`📡 API Call to: ${endpoint}`);
+        console.log(`🔗 Full URL: ${url}`);
+        console.log(`🔑 Headers:`, headers);
+        console.log(`🌍 Mode: ${this.config.mode}`);
+
         const response = await fetch(url, {
             ...options,
             headers
@@ -262,10 +267,13 @@ class QuantaRouteDemo {
             const baseUrl = this.config.config.apiBaseUrl.replace('/v1', '');
             const healthUrl = `${baseUrl}/health`;
             
+            const headers = this.config.getHeaders();
             console.log('🏥 Checking health at:', healthUrl);
+            console.log('🔑 Headers being sent:', headers);
+            console.log('🌍 Current mode:', this.config.mode);
             
             const response = await fetch(healthUrl, {
-                headers: this.config.getHeaders()
+                headers: headers
             });
             
             const status = await response.json();
