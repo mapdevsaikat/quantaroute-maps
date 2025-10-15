@@ -258,7 +258,16 @@ class QuantaRouteDemo {
         const statusDot = statusIndicator.querySelector('.status-dot');
 
         try {
-            const response = await this.apiCall('health');
+            // Health endpoint is at /health (NOT /v1/health)
+            const baseUrl = this.config.config.apiBaseUrl.replace('/v1', '');
+            const healthUrl = `${baseUrl}/health`;
+            
+            console.log('🏥 Checking health at:', healthUrl);
+            
+            const response = await fetch(healthUrl, {
+                headers: this.config.getHeaders()
+            });
+            
             const status = await response.json();
             
             if (status.status === 'healthy') {
