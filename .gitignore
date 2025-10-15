@@ -1,0 +1,289 @@
+# ===================================
+# QuantaRoute Demo App - .gitignore
+# ===================================
+
+# ============
+# Python
+# ============
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+pyvenv.cfg
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# ============
+# Environment Variables & Config
+# ============
+# Environment files (keep .example files)
+.env
+.env.local
+.env.*.local
+*.env
+!config.env.example
+
+# Local configuration overrides
+config.local.*
+*.local.json
+
+# ============
+# Logs & Debug Files
+# ============
+# All log files
+*.log
+logs/
+log/
+
+# Specifically named log files in your project
+backend_debug.log
+backend_fixed.log
+backend_fully_fixed.log
+backend.log
+demo.log
+
+# Debug files
+*.debug
+*.trace
+
+# ============
+# Data & Cache
+# ============
+# Data directory (uncomment if you want to track data files)
+data/
+# Or be more specific:
+# data/*.osm
+# data/*.pbf
+# data/cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Cache directories
+.cache/
+cache/
+*.cache
+
+# ============
+# Operating System
+# ============
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============
+# IDE & Editors
+# ============
+# Vim
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+*.un~
+Session.vim
+
+# Emacs
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea_modules/
+
+# ============
+# Frontend / Node (if applicable)
+# ============
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+out/
+
+# ============
+# Jupyter Notebooks
+# ============
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+*.ipynb_checkpoints
+
+# ============
+# Database
+# ============
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# ============
+# Backup & Archive
+# ============
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.swp
+*~
+
+# ============
+# Application Specific
+# ============
+# Compiled frontend assets (if you compile/minify)
+/frontend/dist/
+/frontend/build/
+
+# Performance/benchmark results
+benchmarks/
+performance_results/
+
+# Generated documentation
+/docs/_build/
+/docs/.doctrees/
+
+# Test outputs
+test-results/
+test-reports/
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# ============
+# Miscellaneous
+# ============
+# Security & sensitive files
+*.pem
+*.key
+*.cert
+*.crt
+secrets.*
+credentials.*
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.iso
+
+# System files
+.fuse_hidden*
+
