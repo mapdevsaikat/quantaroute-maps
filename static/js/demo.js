@@ -870,8 +870,12 @@ class QuantaRouteDemo {
         
         if (this.currentProfile === 'bicycle' || this.currentProfile === 'foot') {
             console.log('✅ Profile matches, processing elevation data...');
-            // Generate elevation data safely
-            const elevationData = routeData.elevation_profile || this.generateElevationData(routeData.path);
+            // Generate elevation data safely - store it if generated to avoid regeneration
+            if (!routeData.elevation_profile && !routeData._cached_elevation) {
+                // Generate once and cache it on the route object
+                routeData._cached_elevation = this.generateElevationData(routeData.path);
+            }
+            const elevationData = routeData.elevation_profile || routeData._cached_elevation;
             
             console.log('📊 Elevation data details:', {
                 source: routeData.elevation_profile ? 'from_backend' : 'generated_fallback',
