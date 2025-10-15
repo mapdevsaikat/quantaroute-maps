@@ -126,10 +126,31 @@ class QuantaRouteDemo {
     }
 
     async addBengaluruBounds() {
+        // Define fallback Bengaluru bounds
+        const DEFAULT_BENGALURU_BOUNDS = {
+            north: 13.1729,
+            south: 12.7342,
+            east: 77.8826,
+            west: 77.3755
+        };
+        
+        let bounds = DEFAULT_BENGALURU_BOUNDS;
+        
         try {
             const response = await this.apiCall('bengaluru-bounds');
-            const bounds = await response.json();
-            
+            if (response.ok) {
+                const apiBounds = await response.json();
+                // Validate bounds before using
+                if (apiBounds && apiBounds.north && apiBounds.south && apiBounds.east && apiBounds.west) {
+                    bounds = apiBounds;
+                    console.log('✅ Loaded Bengaluru bounds from API:', bounds);
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not load bounds from API, using default:', error);
+        }
+        
+        try {
             const rectangle = L.rectangle([
                 [bounds.south, bounds.west],
                 [bounds.north, bounds.east]
@@ -2316,7 +2337,7 @@ class QuantaRouteDemo {
 
                 console.log('🛣️ Calculating alternative routes with data:', routeData);
                 
-                const response = await this.apiCall('route/alternatives', {
+                const response = await this.apiCall('routing/alternatives', {
                     method: 'POST',
                     body: JSON.stringify(routeData)
                 });
@@ -2367,7 +2388,7 @@ class QuantaRouteDemo {
 
                 console.log('🚀 Calculating single route with data:', routeData);
 
-                const response = await this.apiCall('route', {
+                const response = await this.apiCall('routing', {
                     method: 'POST',
                     body: JSON.stringify(routeData)
                 });
