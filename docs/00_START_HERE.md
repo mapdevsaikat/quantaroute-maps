@@ -136,7 +136,7 @@ python start_simple_demo.py
 **API connection fails?**
 ```bash
 # Test API manually
-curl https://routing.api.quantaroute.com/v1/health
+curl https://routing.api.quantaroute.com/health
 
 # Reconfigure
 python setup_remote_api.py

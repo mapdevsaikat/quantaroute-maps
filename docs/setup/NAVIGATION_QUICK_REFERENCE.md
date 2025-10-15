@@ -156,7 +156,7 @@ pytest test_basic_routing.py
 
 ### **Test API Health**
 ```bash
-curl https://routing.api.quantaroute.com/v1/health
+curl https://routing.api.quantaroute.com/health
 ```
 
 ---
