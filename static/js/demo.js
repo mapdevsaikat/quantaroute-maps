@@ -2244,13 +2244,37 @@ class QuantaRouteDemo {
 
     getProfileColor(profile) {
         const colors = {
-            car: '#3b82f6',
-            bicycle: '#10b981',
-            foot: '#f59e0b',
-            motorcycle: '#ef4444',
-            public_transport: '#8b5cf6'
+            car: '#00008B',          // Dark blue
+            bicycle: '#10b981',      // Green
+            foot: '#f59e0b',         // Orange
+            motorcycle: '#ef4444',   // Red
+            public_transport: '#8b5cf6'  // Purple
         };
         return colors[profile] || '#64748b';
+    }
+
+    /**
+     * Get lighter variation of primary color for alternative routes
+     */
+    getAlternativeColor(index, profile) {
+        const baseColor = this.getProfileColor(profile || this.currentProfile);
+        
+        // Generate lighter variations of the primary color
+        // Convert hex to RGB, lighten, then convert back
+        const hex = baseColor.replace('#', '');
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        // Lighten by adding to each channel (0.3, 0.5, 0.7 for different alternatives)
+        const lightenFactors = [0.4, 0.6, 0.8];
+        const factor = lightenFactors[index % lightenFactors.length];
+        
+        const newR = Math.min(255, Math.floor(r + (255 - r) * factor));
+        const newG = Math.min(255, Math.floor(g + (255 - g) * factor));
+        const newB = Math.min(255, Math.floor(b + (255 - b) * factor));
+        
+        return `rgb(${newR}, ${newG}, ${newB})`;
     }
 
     // Override the existing calculateRoute method to support profiles
@@ -2460,7 +2484,7 @@ class QuantaRouteDemo {
         alternatives.forEach((alternative, index) => {
             if (alternative.path && alternative.path.length > 1) {
                 const isSelected = alternative.is_selected;
-                const routeColor = isSelected ? this.getProfileColor(this.currentProfile) : this.getAlternativeColor(index);
+                const routeColor = isSelected ? this.getProfileColor(this.currentProfile) : this.getAlternativeColor(index, this.currentProfile);
                 
                 // Draw connector lines and get adjusted path
                 const adjustedPath = this.drawRouteWithConnectors(
@@ -2473,8 +2497,8 @@ class QuantaRouteDemo {
                 
                 const routeLayer = L.polyline(adjustedPath, {
                     color: routeColor,
-                    weight: isSelected ? 5 : 3,
-                    opacity: isSelected ? 0.9 : 0.7,
+                    weight: isSelected ? 14 : 8,
+                    opacity: isSelected ? 0.8 : 0.6,
                     lineCap: 'round',
                     lineJoin: 'round'
                 }).addTo(this.map);
@@ -2552,8 +2576,8 @@ class QuantaRouteDemo {
             
             this.routeLayer = L.polyline(adjustedPath, {
                 color: this.getProfileColor(this.currentProfile),
-                weight: 5,
-                opacity: 0.9,
+                weight: 14,
+                opacity: 0.8,
                 lineCap: 'round',
                 lineJoin: 'round'
             }).addTo(this.map);
@@ -2610,9 +2634,9 @@ class QuantaRouteDemo {
                 );
                 
                 const routeLayer = L.polyline(adjustedPath, {
-                    color: isSelected ? this.getProfileColor(this.currentProfile) : '#94a3b8',
-                    weight: isSelected ? 5 : 3,
-                    opacity: isSelected ? 0.9 : 0.5,
+                    color: isSelected ? this.getProfileColor(this.currentProfile) : this.getAlternativeColor(index, this.currentProfile),
+                    weight: isSelected ? 14 : 8,
+                    opacity: isSelected ? 0.8 : 0.6,
                     lineCap: 'round',
                     lineJoin: 'round'
                 }).addTo(this.map);
@@ -2759,7 +2783,7 @@ class QuantaRouteDemo {
             const costDiff = ((costRatio - 1) * 100).toFixed(0);
             const routeColor = alternative.is_selected ? 
                 this.getProfileColor(this.currentProfile) : 
-                this.getAlternativeColor(index);
+                this.getAlternativeColor(index, this.currentProfile);
 
             item.innerHTML = `
                 <div class="alternative-info">
@@ -2819,9 +2843,9 @@ class QuantaRouteDemo {
         this.alternativeRouteLayers.forEach((routeLayer, i) => {
             const isSelected = i === index;
             routeLayer.layer.setStyle({
-                color: isSelected ? this.getProfileColor(this.currentProfile) : '#94a3b8',
-                weight: isSelected ? 5 : 3,
-                opacity: isSelected ? 0.9 : 0.5
+                color: isSelected ? this.getProfileColor(this.currentProfile) : this.getAlternativeColor(i, this.currentProfile),
+                weight: isSelected ? 14 : 8,
+                opacity: isSelected ? 0.8 : 0.6
             });
         });
 
