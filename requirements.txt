@@ -1,0 +1,17 @@
+# QuantaRoute Demo App Requirements
+
+# Web Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
+# CORS support
+python-multipart>=0.0.6
+
+# Path handling
+pathlib
+
+# QuantaRoute dependencies (should be installed separately)
+# pip install -e ../
+
+# Development dependencies
+python-dotenv>=1.0.0

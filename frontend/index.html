@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantaRoute - World's First O(m·log^{2/3}n) Routing Engine</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="static/css/demo.css">
+    
+    <!-- Chart.js for elevation profiles -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="mobile-header-content">
+            <h1 class="mobile-title">QuantaRoute</h1>
+            <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-section">
+                    <h1 class="app-title">QuantaRoute</h1>
+                    <p class="app-subtitle">O(m·log^{2/3}n) Routing Engine</p>
+                </div>
+                
+                <div class="stats-row">
+                    <div class="stat-badge">
+                        <span class="stat-number">2025</span>
+                        <span class="stat-label">SSSP Research</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- Status -->
+                <div class="status-card">
+                    <div class="status-indicator" id="statusIndicator">
+                        <div class="status-dot" id="statusDot"></div>
+                        <span class="status-text" id="statusText">Connecting...</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Input -->
+                <div class="control-card">
+                    <h3 class="card-title">📍 Route Planning</h3>
+                    
+                    <div class="search-box">
+                        <input type="text" class="search-input" id="fromInput" placeholder="From: Search or click on map">
+                        <div class="search-results" id="fromResults" style="display: none;"></div>
+                    </div>
+                    
+                    <div class="swap-locations">
+                        <button class="swap-btn" id="swapLocations">
+                            <span>⇅</span>
+                        </button>
+                    </div>
+                    
+                    <div class="search-box">
+                        <input type="text" class="search-input" id="toInput" placeholder="To: Search or click on map">
+                        <div class="search-results" id="toResults" style="display: none;"></div>
+                    </div>
+
+                    <!-- Waypoints -->
+                    <div class="waypoints-list" id="waypointsList"></div>
+                    <button class="add-waypoint-btn" id="addWaypoint">
+                        + Add Stop
+                    </button>
+
+                    <!-- Transport Mode - Compact -->
+                    <div class="transport-mode-compact">
+                        <div class="mode-options">
+                            <button class="mode-btn active" data-profile="car" title="Driving">🚗</button>
+                            <button class="mode-btn" data-profile="foot" title="Walking">🚶</button>
+                            <button class="mode-btn" data-profile="bicycle" title="Cycling">🚲</button>
+                            <button class="mode-btn" data-profile="motorcycle" title="Motorcycle">🏍️</button>
+                            <button class="mode-btn" data-profile="public_transport" title="Public Transit">🚌</button>
+                        </div>
+                    </div>
+
+                    <!-- Alternative Routes Toggle -->
+                    <div class="alternatives-toggle">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="alternativesToggle" checked>
+                            <span class="toggle-text">🛣️ Show Alternative Routes</span>
+                        </label>
+                    </div>
+
+                    <!-- Algorithm Selection (shown when alternatives is checked) -->
+                    <div class="algorithm-selection" id="algorithmSelection" style="margin-top: 10px;">
+                        <label for="algorithmDropdown" style="display: block; font-weight: 600; margin-bottom: 5px; font-size: 13px; color: #2c3e50;">
+                            📊 Alternative Algorithm:
+                        </label>
+                        <select id="algorithmDropdown" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: white;">
+                            <optgroup label="⚡ Fast (Recommended)">
+                                <option value="quantaroute" selected>Fast Exclusion (Default - Fastest)</option>
+                                <option value="adaptive">Adaptive (Smart, Context-aware)</option>
+                                <option value="perturbation">Perturbation (Weight variation)</option>
+                                <option value="highway">Highway Avoidance</option>
+                                <option value="major">Major Road Exclusion</option>
+                            </optgroup>
+                            <optgroup label="🎯 Advanced A* (Slower, More Diverse)">
+                                <option value="plateau">Plateau (Similar cost paths)</option>
+                                <option value="penalty">Penalty (Edge penalization)</option>
+                                <option value="via_point">Via Point (Strategic detours)</option>
+                                <option value="corridor">Corridor (Area-based)</option>
+                                <option value="multi_objective">Multi-Objective (Balanced)</option>
+                            </optgroup>
+                        </select>
+                        <div id="algorithmHelp" style="margin-top: 5px; padding: 8px; background: #f8f9fa; border-left: 3px solid #3498db; font-size: 11px; line-height: 1.4; color: #555; border-radius: 3px;">
+                            <strong>Fast Exclusion:</strong> Quickest alternative route generation. Best for most use cases.
+                        </div>
+                    </div>
+
+                    <button class="route-btn" id="calculateRoute">
+                        Calculate Route
+                    </button>
+                </div>
+
+                <!-- Clear Route Button -->
+                <button id="clearRoute" class="btn btn-secondary" style="display: none;">
+                    🧹 Clear Route
+                </button>
+
+                <!-- Route Information -->
+                <div class="route-summary" id="routeInfo" style="display: none;">
+                    <div class="route-header">
+                        <h3 class="route-title">🧭 Directions</h3>
+                    </div>
+                    <div class="route-stats">
+                        <div class="route-stat">
+                            <div class="stat-value" id="routeDistance">-</div>
+                            <div class="stat-label">Distance</div>
+                        </div>
+                        <div class="route-stat">
+                            <div class="stat-value" id="routeDuration">-</div>
+                            <div class="stat-label">Duration</div>
+                        </div>
+                        <div class="route-stat">
+                            <div class="stat-value" id="routeMode">-</div>
+                            <div class="stat-label">Mode</div>
+                        </div>
+                    </div>
+                        
+                    <!-- Simple Performance Indicator -->
+                    <div class="performance-indicator" id="performanceIndicator" style="display: none;">
+                        <span id="routeComputeTime">Route calculated in -</span>
+                    </div>
+                </div>
+
+                <!-- Alternative Routes Section -->
+                <div class="alternative-routes" id="alternativeRoutes" style="display: none;">
+                    <div class="alternative-header">
+                        <h3 class="alternative-title">🛣️ Route Options</h3>
+                        <span class="alternative-count" id="alternativeCount">3 routes found</span>
+                    </div>
+                    <div class="route-alternatives" id="routeAlternativesList">
+                        <!-- Alternative routes will be populated here by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer in sidebar -->
+            <div class="sidebar-footer">
+                <div class="footer-text">
+                    <strong>QuantaRoute</strong><br>
+                    <small>Powered by <a href="https://arxiv.org/abs/2504.17033" target="_blank">Duan et al. research</a></small><br>
+                    <small>Built with Python 🐍, Rust 🦀, and breakthrough algorithms ⚡</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div id="map" class="map-view"></div>
+            
+            <!-- Elevation Profile Panel -->
+            <div id="elevationPanel" class="elevation-panel" style="display: none;">
+                <div class="elevation-container">
+                    <div class="elevation-info">
+                        <div class="elevation-badge">
+                            <span class="elevation-icon">📈</span>
+                            <span class="elevation-label">Elevation Profile</span>
+                        </div>
+                        <div class="elevation-stats" id="elevationStats">
+                            <span class="stat-item">
+                                <span class="elevation-label">Min:</span>
+                                <span class="stat-value" id="minElevation">--</span>
+                            </span>
+                            <span class="stat-item">
+                                <span class="elevation-label">Max:</span>
+                                <span class="stat-value" id="maxElevation">--</span>
+                            </span>
+                            <span class="stat-item">
+                                <span class="elevation-label">Gain:</span>
+                                <span class="stat-value" id="elevationGain">--</span>
+                            </span>
+                        </div>
+                        <button class="elevation-minimize" id="elevationMinimize" title="Minimize">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9l6 6 6-6"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="elevation-chart-container" id="elevationChartContainer">
+                        <canvas id="elevationChart" class="elevation-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading overlay -->
+            <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Calculating optimal route...</div>
+                </div>
+            </div>
+
+            <!-- Mobile floating action button -->
+            <div class="mobile-fab" id="mobileFab">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Turn-by-Turn Directions Panel -->
+    <div id="floatingDirections" class="floating-directions">
+        <div class="directions-header">
+            <h3 class="directions-title">
+                🧭 Directions
+            </h3>
+            <button class="directions-close" onclick="quantaRouteDemo.hideFloatingDirections()">×</button>
+            <div class="route-summary" id="routeSummary">
+                <div class="route-summary-item">
+                    <span>Distance: </span>
+                    <span id="summaryDistance">-</span>
+                </div>
+                <div class="route-summary-item">
+                    <span>Time: </span>
+                    <span id="summaryTime">-</span>
+                </div>
+            </div>
+        </div>
+        <div class="directions-content" id="directionsContent">
+            <div class="directions-step">
+                <div class="step-number">1</div>
+                <div class="step-icon">
+                    <div class="turn-icon straight"></div>
+                </div>
+                <div class="step-content">
+                    <div class="step-instruction">Loading directions...</div>
+                    <div class="step-details">
+                        <span class="step-distance">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status messages container -->
+    <div id="statusMessages" class="status-messages-container"></div>
+
+    <!-- Demo scripts -->
+    <script src="static/js/exploration_visualizer.js"></script>
+    <!-- Demo Configuration (supports local and remote API modes) -->
+    <script src="static/js/demo-config.js"></script>
+    <script src="static/js/demo.js"></script>
+</body>
+</html>
