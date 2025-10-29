@@ -161,7 +161,7 @@ curl -X POST "https://routing.api.quantaroute.com/v1/routing/" \
      -d '{
        "start": [12.9716, 77.5946],
        "end": [12.9365, 77.6910],
-       "profile": "car"
+       "profile": "car_india"
      }'
 ```
 
@@ -173,7 +173,7 @@ curl -X POST "https://routing.api.quantaroute.com/v1/routing/alternatives/" \
      -d '{
        "start": [12.9716, 77.5946],
        "end": [12.9365, 77.6910],
-       "profile": "car",
+       "profile": "ca_india_",
        "num_alternatives": 3,
        "algorithm": "quantaroute"
      }'

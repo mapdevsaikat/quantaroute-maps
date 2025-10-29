@@ -19,7 +19,7 @@ Your QuantaRoute demo now supports **TWO MODES**:
 
 ```bash
 cd /Users/saikat.maiti/Documents/sssp/demo-app
-python start_simple_demo.py
+python start_demo.py
 open http://localhost:8000
 ```
 
@@ -40,7 +40,7 @@ python start_demo.py
 #### 3. Start and Switch
 
 ```bash
-python start_simple_demo.py
+python start_demo.py
 open http://localhost:8000?mode=remote
 ```
 
@@ -89,7 +89,7 @@ open http://localhost:8000?mode=remote
 ### Scenario 1: "I want to test locally"
 
 ```bash
-python start_simple_demo.py
+python start_demo.py
 # That's it! Opens at http://localhost:8000
 ```
 
@@ -124,7 +124,7 @@ vercel deploy
 
 ```bash
 # Use local mode (no internet needed after initial setup)
-python start_simple_demo.py
+python start_demo.py
 # Mode: 🏠 Local Demo
 ```
 
@@ -162,7 +162,7 @@ window.demoConfig.setMode('local');
 
 After setup, check:
 
-1. **Start demo:** `python start_simple_demo.py`
+1. **Start demo:** `python start_demo.py`
 2. **Open browser:** http://localhost:8000
 3. **Check indicator:** Should show 🏠 Local Demo
 4. **Calculate route:** Click map twice, calculate route
@@ -181,7 +181,7 @@ After setup, check:
 **Local Mode:**
 ```bash
 # Restart backend
-python start_simple_demo.py
+python start_demo.py
 ```
 
 **Remote Mode:**
@@ -266,20 +266,8 @@ location.reload();
 ### For Development:
 ```bash
 # Use local mode
-python start_simple_demo.py
+python start_demo.py
 # Develop, test, iterate
-```
-
-### For Deployment:
-```bash
-# Deploy API
-railway up
-
-# Configure demo
-python setup_remote_api.py
-
-# Test remote mode
-open http://localhost:8000?mode=remote
 ```
 
 ### For Sharing:
@@ -340,7 +328,7 @@ vercel deploy
 
 **Start with:** 
 ```bash
-python start_simple_demo.py
+python start_demo.py
 ```
 
 **Happy routing!** 🗺️✨

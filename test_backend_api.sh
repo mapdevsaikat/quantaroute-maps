@@ -2,7 +2,7 @@
 # Test Backend API Configuration
 
 API_URL="https://routing.api.quantaroute.com"
-API_KEY="demo_enterprise_api_key_quantaroute_2024"
+API_KEY="demo_key"
 
 echo "🧪 Testing QuantaRoute Backend API"
 echo "=================================="

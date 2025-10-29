@@ -2717,6 +2717,18 @@ class QuantaRouteDemo {
                     diversity_preference: 0.7
                 };
 
+                // Add waypoints if any
+                if (this.waypoints.length > 0) {
+                    routeData.waypoints = this.waypoints
+                        .filter(wp => wp !== null)
+                        .map(wp => [wp.lat, wp.lng]);
+                    this.log(`📍 Added ${routeData.waypoints.length} waypoints to route calculation`);
+                    this.showStatusMessage(
+                        `🎯 Calculating route with ${routeData.waypoints.length} waypoint${routeData.waypoints.length > 1 ? 's' : ''}...`, 
+                        'info'
+                    );
+                }
+
                 this.log('🛣️ Calculating alternative routes');
                 
                 const response = await this.apiCall('routing/alternatives', {
@@ -2766,6 +2778,11 @@ class QuantaRouteDemo {
                     routeData.waypoints = this.waypoints
                         .filter(wp => wp !== null)
                         .map(wp => [wp.lat, wp.lng]);
+                    this.log(`📍 Added ${routeData.waypoints.length} waypoints to single route calculation`);
+                    this.showStatusMessage(
+                        `🎯 Calculating route with ${routeData.waypoints.length} waypoint${routeData.waypoints.length > 1 ? 's' : ''}...`, 
+                        'info'
+                    );
                 }
 
                 this.log('🚀 Calculating single route');

@@ -55,7 +55,7 @@ class DemoConfig {
                 displayName: '🏠 Local Demo',
                 description: 'Using local QuantaRoute instance on localhost:8080',
                 authRequired: true,
-                apiKey: 'demo_enterprise_api_key_quantaroute_2024',
+                apiKey: 'demo_enterprise_api_key_quantaroute_2024',  // Dummy key for local testing
                 healthCheck: true
             },
             remote: {
@@ -65,7 +65,9 @@ class DemoConfig {
                 displayName: '🌐 Production API',
                 description: 'Using QuantaRoute Cloud API (routing.api.quantaroute.com)',
                 authRequired: true,
-                apiKey: window.QUANTAROUTE_API_KEY || 'demo_enterprise_api_key_quantaroute_2024',
+                // Real key loaded from window.QUANTAROUTE_API_KEY (set by api-config.js)
+                // Fallback dummy key only used if window variable not set
+                apiKey: window.QUANTAROUTE_API_KEY || 'PLACEHOLDER_DUMMY_KEY_FOR_LOCAL_DEV',
                 healthCheck: true
             }
         };
