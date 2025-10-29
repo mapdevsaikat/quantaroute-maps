@@ -27,23 +27,11 @@ open http://localhost:8000
 
 ---
 
-### Option 2: Remote Mode
-
-#### 1. Deploy Your API (If Not Already Done)
-
-```bash
-cd /Users/saikat.maiti/Documents/sssp
-railway login
-railway up
-```
-
-**Your API URL:** `https://your-app-XXXXX.up.railway.app`
-
 #### 2. Configure Demo
 
 ```bash
 cd demo-app
-python setup_remote_api.py
+python start_demo.py
 
 # Enter your API URL when prompted
 # Enter your API key (or use demo key)

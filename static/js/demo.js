@@ -1,6 +1,17 @@
 /**
  * QuantaRoute Demo JavaScript
  * Interactive routing demonstration with performance comparison
+ * 
+ * API FIELD MAPPING (QuantaRoute Backend):
+ * ==========================================
+ * Instructions from backend use these field names:
+ * - "name" → street/road name (NOT "street_name")
+ * - "distance" → distance in meters (NOT "distance_m")
+ * - "duration" → duration in seconds (NOT "duration_s")
+ * - "geometry" → GeoJSON geometry with coordinates as [lon, lat]
+ * - "maneuver" → object with type, modifier, location
+ * 
+ * Frontend normalizes these to internal format for consistency.
  */
 
 class QuantaRouteDemo {
@@ -19,6 +30,9 @@ class QuantaRouteDemo {
         this.isMobile = window.innerWidth <= 768;
         this.sidebarOpen = false;
         
+        // Debug mode flag - set to true for verbose logging
+        this.DEBUG_MODE = false;
+        
         // Enhanced navigation features
         this.currentProfile = 'car';
         this.waypoints = [];
@@ -34,6 +48,37 @@ class QuantaRouteDemo {
         this.selectedInstructionIndex = -1;
         
         this.init();
+    }
+
+    /**
+     * Debug logging helper - only logs when DEBUG_MODE is true
+     */
+    log(...args) {
+        if (this.DEBUG_MODE) {
+            console.log(...args);
+        }
+    }
+
+    /**
+     * Format duration for display
+     * - Minutes only for < 60 min: "45 min"
+     * - Hours and minutes for >= 60 min: "1h 46m"
+     */
+    formatDuration(minutes) {
+        if (!minutes || minutes < 0) return '0 min';
+        
+        if (minutes < 60) {
+            return `${Math.round(minutes)} min`;
+        }
+        
+        const hours = Math.floor(minutes / 60);
+        const mins = Math.round(minutes % 60);
+        
+        if (mins === 0) {
+            return `${hours}h`;
+        }
+        
+        return `${hours}h ${mins}m`;
     }
 
     async init() {
@@ -56,15 +101,22 @@ class QuantaRouteDemo {
      */
     async apiCall(endpoint, options = {}) {
         const url = this.config.getApiUrl(endpoint);
+        
+        // Handle custom demo endpoints client-side (they don't exist in QuantaRoute API)
+        if (url === null) {
+            if (endpoint === 'bengaluru-bounds') {
+                return this.getMockBengaluruBounds();
+            } else if (endpoint === 'search?q=') {
+                return this.getMockSearchResults();
+            }
+        }
+        
         const headers = {
             ...this.config.getHeaders(),
             ...(options.headers || {})
         };
 
-        console.log(`📡 API Call to: ${endpoint}`);
-        console.log(`🔗 Full URL: ${url}`);
-        console.log(`🔑 Headers:`, headers);
-        console.log(`🌍 Mode: ${this.config.mode}`);
+        this.log(`📡 API Call to: ${endpoint}`, {url, mode: this.config.mode});
 
         const response = await fetch(url, {
             ...options,
@@ -72,6 +124,43 @@ class QuantaRouteDemo {
         });
 
         return response;
+    }
+    
+    /**
+     * Mock Bengaluru bounds (client-side data)
+     */
+    getMockBengaluruBounds() {
+        return {
+            ok: true,
+            json: async () => ({
+                north: 13.1986,
+                south: 12.7342,
+                east: 77.8803,
+                west: 77.3691,
+                center: [12.9716, 77.5946]
+            })
+        };
+    }
+    
+    /**
+     * Mock search results (client-side data)
+     */
+    getMockSearchResults() {
+        return {
+            ok: true,
+            json: async () => ({
+                results: [
+                    {"name": "Kempegowda International Airport", "address": "KIAL Road", "lat": 13.1986, "lng": 77.7066},
+                    {"name": "MG Road", "address": "MG Road, Bengaluru", "lat": 12.9716, "lng": 77.5946},
+                    {"name": "Electronic City", "address": "Electronic City, Bengaluru", "lat": 12.8456, "lng": 77.6603},
+                    {"name": "Whitefield", "address": "Whitefield, Bengaluru", "lat": 12.9698, "lng": 77.7500},
+                    {"name": "Koramangala", "address": "Koramangala, Bengaluru", "lat": 12.9352, "lng": 77.6245},
+                    {"name": "Indiranagar", "address": "Indiranagar, Bengaluru", "lat": 12.9784, "lng": 77.6408},
+                    {"name": "Jayanagar", "address": "Jayanagar, Bengaluru", "lat": 12.9250, "lng": 77.5838},
+                    {"name": "Malleswaram", "address": "Malleswaram, Bengaluru", "lat": 13.0060, "lng": 77.5707}
+                ]
+            })
+        };
     }
 
     /**
@@ -122,8 +211,6 @@ class QuantaRouteDemo {
         // Add Bengaluru bounds rectangle for visual reference
         this.addBengaluruBounds();
         
-        console.log('🗺️ Map initialized');
-        
         // Show welcome message
         setTimeout(() => {
             this.showStatusMessage('🎯 Click anywhere on the map to set your start point!', 'info');
@@ -148,11 +235,11 @@ class QuantaRouteDemo {
                 // Validate bounds before using
                 if (apiBounds && apiBounds.north && apiBounds.south && apiBounds.east && apiBounds.west) {
                     bounds = apiBounds;
-                    console.log('✅ Loaded Bengaluru bounds from API:', bounds);
+                    this.log('✅ Loaded Bengaluru bounds from API:', bounds);
                 }
             }
         } catch (error) {
-            console.warn('⚠️ Could not load bounds from API, using default:', error);
+            this.log('⚠️ Could not load bounds from API, using default:', error);
         }
         
         try {
@@ -268,9 +355,7 @@ class QuantaRouteDemo {
             const healthUrl = `${baseUrl}/health`;
             
             const headers = this.config.getHeaders();
-            console.log('🏥 Checking health at:', healthUrl);
-            console.log('🔑 Headers being sent:', headers);
-            console.log('🌍 Current mode:', this.config.mode);
+            this.log('🏥 Health check:', {url: healthUrl, mode: this.config.mode});
             
             const response = await fetch(healthUrl, {
                 headers: headers
@@ -278,12 +363,13 @@ class QuantaRouteDemo {
             
             const status = await response.json();
             
-            if (status.status === 'healthy') {
+            // API returns status: "ok" for QuantaRoute API, or status: "healthy" for demo backend
+            if (status.status === 'ok' || status.status === 'healthy') {
                 statusText.textContent = status.quantaroute_available 
                     ? 'QuantaRoute Ready' 
-                    : 'Demo Mode (Simulated)';
+                    : 'QuantaRoute API Connected';
                 statusDot.classList.add('ready');
-                console.log('✅ Server ready:', status);
+                this.log('✅ Server ready:', status);
             } else {
                 statusText.textContent = 'Server Error';
                 console.error('❌ Server not healthy:', status);
@@ -321,8 +407,8 @@ class QuantaRouteDemo {
             // Set end point
             this.setEndPoint(latlng);
             this.clickCount = 2;
-            // Calculate route immediately
-            this.calculateRoute();
+            // Prompt user to click Direction button instead of auto-calculating
+            this.showStatusMessage('✅ End point set! Click "Direction" button to calculate route.', 'success');
         } else {
             // If route already exists, suggest using Clear Route button or add as waypoint
             this.showStatusMessage('Route already exists! Use "Clear Route" button to reset, or click "Add Stop" to add waypoints.', 'info');
@@ -331,45 +417,6 @@ class QuantaRouteDemo {
 
 
 
-
-
-
-
-
-    showTurnByTurnInstructions(instructions) {
-        // Create turn-by-turn panel if it doesn't exist
-        let instructionsPanel = document.getElementById('turnByTurnPanel');
-        if (!instructionsPanel) {
-            instructionsPanel = document.createElement('div');
-            instructionsPanel.id = 'turnByTurnPanel';
-            instructionsPanel.innerHTML = `
-                <div style="background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 15px; margin-top: 10px;">
-                    <h4 style="margin: 0 0 10px 0; color: #333;">🧭 Turn-by-Turn Navigation</h4>
-                    <div id="instructionsList" style="max-height: 200px; overflow-y: auto;"></div>
-                </div>
-            `;
-            document.querySelector('.controls-panel').appendChild(instructionsPanel);
-        }
-
-        // Populate instructions
-        const instructionsList = document.getElementById('instructionsList');
-        instructionsList.innerHTML = instructions.map((instruction, index) => `
-            <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
-                <div style="font-weight: bold; color: #667eea; margin-right: 10px; min-width: 20px;">
-                    ${index + 1}.
-                </div>
-                <div style="flex: 1;">
-                    <div style="font-weight: 500;">${instruction.instruction}</div>
-                    <div style="font-size: 12px; color: #666;">
-                        ${instruction.distance_m > 0 ? `${Math.round(instruction.distance_m)}m` : ''}
-                        ${instruction.duration_s > 0 ? ` • ${Math.round(instruction.duration_s)}s` : ''}
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-        instructionsPanel.style.display = 'block';
-    }
 
     showError(message) {
         // Create error popup
@@ -477,10 +524,25 @@ class QuantaRouteDemo {
             this.map.removeLayer(this.startMarker);
         }
 
-        // Create new start marker with custom styling
+        // Create new draggable start marker with custom styling
         this.startMarker = L.marker([latlng.lat, latlng.lng], {
-            icon: this.createStartMarker(latlng)
+            icon: this.createStartMarker(latlng),
+            draggable: true,  // ✅ Make marker draggable
+            autoPan: true     // Auto-pan map when dragging near edge
         }).addTo(this.map);
+
+        // Add drag event listeners for visual feedback
+        this.startMarker.on('dragstart', () => {
+            this.startMarker.setOpacity(0.6);
+            console.log('🔄 Start marker drag started');
+        });
+
+        this.startMarker.on('dragend', (e) => {
+            this.startMarker.setOpacity(1.0);
+            const newLatLng = e.target.getLatLng();
+            console.log('✅ Start marker dragged to:', newLatLng);
+            this.handleMarkerDrag('start', newLatLng);
+        });
 
         // Update input field
         const fromInput = document.getElementById('fromInput');
@@ -488,9 +550,13 @@ class QuantaRouteDemo {
             fromInput.value = `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
         }
 
+        // Show individual clear button for start point
+        const clearFromBtn = document.getElementById('clearFromInput');
+        if (clearFromBtn) clearFromBtn.style.display = 'flex';
+
         this.showStatusMessage('✅ Start point set! Now set your destination.', 'success');
         
-        // Show clear button once we have a start point
+        // Show clear route button once we have a start point
         const clearButton = document.getElementById('clearRoute');
         if (clearButton) clearButton.style.display = 'block';
     }
@@ -501,16 +567,35 @@ class QuantaRouteDemo {
             this.map.removeLayer(this.endMarker);
         }
 
-        // Create new end marker with custom styling
+        // Create new draggable end marker with custom styling
         this.endMarker = L.marker([latlng.lat, latlng.lng], {
-            icon: this.createEndMarker(latlng)
+            icon: this.createEndMarker(latlng),
+            draggable: true,  // ✅ Make marker draggable
+            autoPan: true     // Auto-pan map when dragging near edge
         }).addTo(this.map);
+
+        // Add drag event listeners for visual feedback
+        this.endMarker.on('dragstart', () => {
+            this.endMarker.setOpacity(0.6);
+            console.log('🔄 End marker drag started');
+        });
+
+        this.endMarker.on('dragend', (e) => {
+            this.endMarker.setOpacity(1.0);
+            const newLatLng = e.target.getLatLng();
+            console.log('✅ End marker dragged to:', newLatLng);
+            this.handleMarkerDrag('end', newLatLng);
+        });
 
         // Update input field
         const toInput = document.getElementById('toInput');
         if (toInput) {
             toInput.value = `${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
         }
+
+        // Show individual clear button for end point
+        const clearToBtn = document.getElementById('clearToInput');
+        if (clearToBtn) clearToBtn.style.display = 'flex';
 
         this.showStatusMessage('✅ Destination set! Click "Calculate Route" to navigate.', 'success');
     }
@@ -534,7 +619,7 @@ class QuantaRouteDemo {
                 document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 this.currentProfile = btn.dataset.profile;
-                console.log(`🔄 Switched to ${this.currentProfile} profile - previous route cleared`);
+                this.log(`🔄 Switched to ${this.currentProfile} profile`);
                 
                 // Show helpful tips for different modes
                 if (this.currentProfile === 'bicycle') {
@@ -557,11 +642,6 @@ class QuantaRouteDemo {
                         '🏍️ Motorcycle mode: Similar to car routing but may use lanes not accessible to larger vehicles.', 
                         'info'
                     );
-                } else if (this.currentProfile === 'public_transport') {
-                    this.showStatusMessage(
-                        '🚌 Public transport mode: Routes using bus routes and transit-accessible paths in Bengaluru.', 
-                        'info'
-                    );
                 }
             });
         });
@@ -571,14 +651,63 @@ class QuantaRouteDemo {
         const toInput = document.getElementById('toInput');
         
         if (fromInput) {
+            // Handle POI search (existing functionality)
             fromInput.addEventListener('input', (e) => {
                 this.handleSearch(e.target.value, 'from');
+            });
+            
+            // Handle manual coordinate input (new functionality)
+            // Listen for Enter key or blur event to parse coordinates
+            fromInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const value = e.target.value.trim();
+                    // Try to parse as coordinates
+                    if (this.parseCoordinateInput(value)) {
+                        this.handleManualCoordinateInput('start', value);
+                        // Hide search results if they were showing
+                        const fromResults = document.getElementById('fromResults');
+                        if (fromResults) fromResults.style.display = 'none';
+                    }
+                }
+            });
+            
+            fromInput.addEventListener('blur', (e) => {
+                const value = e.target.value.trim();
+                // Only try coordinate parsing if value looks like coordinates (contains comma)
+                if (value.includes(',') && this.parseCoordinateInput(value)) {
+                    this.handleManualCoordinateInput('start', value);
+                }
             });
         }
         
         if (toInput) {
+            // Handle POI search (existing functionality)
             toInput.addEventListener('input', (e) => {
                 this.handleSearch(e.target.value, 'to');
+            });
+            
+            // Handle manual coordinate input (new functionality)
+            toInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const value = e.target.value.trim();
+                    // Try to parse as coordinates
+                    if (this.parseCoordinateInput(value)) {
+                        this.handleManualCoordinateInput('end', value);
+                        // Hide search results if they were showing
+                        const toResults = document.getElementById('toResults');
+                        if (toResults) toResults.style.display = 'none';
+                    }
+                }
+            });
+            
+            toInput.addEventListener('blur', (e) => {
+                const value = e.target.value.trim();
+                // Only try coordinate parsing if value looks like coordinates (contains comma)
+                if (value.includes(',') && this.parseCoordinateInput(value)) {
+                    this.handleManualCoordinateInput('end', value);
+                }
             });
         }
 
@@ -598,6 +727,22 @@ class QuantaRouteDemo {
             });
         }
 
+        // Clear individual start point button
+        const clearFromBtn = document.getElementById('clearFromInput');
+        if (clearFromBtn) {
+            clearFromBtn.addEventListener('click', () => {
+                this.clearStartPoint();
+            });
+        }
+
+        // Clear individual end point button
+        const clearToBtn = document.getElementById('clearToInput');
+        if (clearToBtn) {
+            clearToBtn.addEventListener('click', () => {
+                this.clearEndPoint();
+            });
+        }
+
         // Calculate route button
         const calculateBtn = document.getElementById('calculateRoute');
         if (calculateBtn) {
@@ -612,8 +757,6 @@ class QuantaRouteDemo {
         
         if (alternativesToggle) {
             alternativesToggle.addEventListener('change', () => {
-                console.log('🔄 Alternative routes toggle changed:', alternativesToggle.checked);
-                
                 // Show/hide algorithm selection based on toggle
                 if (algorithmSelection) {
                     algorithmSelection.style.display = alternativesToggle.checked ? 'block' : 'none';
@@ -644,8 +787,6 @@ class QuantaRouteDemo {
                     `🛣️ Alternative routes ${toggleStatus}. Click "Calculate Route" to see the difference!`, 
                     'info'
                 );
-                
-                console.log(`✅ Routes cleared due to alternative toggle: ${toggleStatus}`);
             });
             
             // Initialize visibility on load
@@ -660,16 +801,12 @@ class QuantaRouteDemo {
         
         if (algorithmDropdown && algorithmHelp) {
             const algorithmDescriptions = {
-                'quantaroute': '<strong>Fast Exclusion:</strong> Quickest alternative route generation. Excludes edges efficiently. <em>Best for most use cases.</em>',
-                'adaptive': '<strong>Adaptive:</strong> Intelligently selects strategies based on route length and complexity. <em>Smart but slightly slower.</em>',
-                'perturbation': '<strong>Perturbation:</strong> Varies edge weights slightly to find naturally diverse routes. <em>Good balance of speed and diversity.</em>',
-                'highway': '<strong>Highway Avoidance:</strong> Finds alternatives that avoid major highways. <em>Great for scenic routes.</em>',
-                'major': '<strong>Major Road Exclusion:</strong> Excludes major roads to find quieter alternatives. <em>Good for local exploration.</em>',
-                'plateau': '<strong>Plateau (A*):</strong> Finds routes with similar total cost using A* heuristics. <em>High quality but slower (5-10s).</em>',
-                'penalty': '<strong>Penalty (A*):</strong> Penalizes edges from optimal route to force diversity. <em>Very diverse but slower (5-10s).</em>',
-                'via_point': '<strong>Via Point (A*):</strong> Routes through strategic intermediate points. <em>Geographical diversity, slower (5-10s).</em>',
-                'corridor': '<strong>Corridor (A*):</strong> Finds routes within distance corridors. <em>Controlled exploration, slower (5-10s).</em>',
-                'multi_objective': '<strong>Multi-Objective (A*):</strong> Balances time, distance, and scenery. <em>Best quality, slowest (10-20s).</em>'
+                'plateau': '🎯 <strong>Plateau A*:</strong> Finds routes with similar total cost using A* heuristics. <em>Best quality, profile-aware (5-10s).</em>',
+                'penalty': '🎯 <strong>Penalty A*:</strong> Penalizes optimal route edges to force maximum diversity. <em>Most diverse routes (5-10s).</em>',
+                'via_point': '🎯 <strong>Via Point A*:</strong> Routes through strategic intermediate waypoints. <em>Geographical diversity (5-10s).</em>',
+                'corridor': '🎯 <strong>Corridor A*:</strong> Explores routes within distance corridors from optimal. <em>Controlled exploration (5-10s).</em>',
+                'multi_objective': '🎯 <strong>Multi-Objective A*:</strong> Balances time, distance, scenery, and safety. <em>Best overall quality (10-15s).</em>',
+                'quantaroute': '⚡ <strong>Fast Exclusion:</strong> Quick edge exclusion algorithm. <em>Simplest and fastest (~1s).</em>'
             };
             
             algorithmDropdown.addEventListener('change', () => {
@@ -841,60 +978,287 @@ class QuantaRouteDemo {
         }
     }
 
+    /**
+     * Parse manual coordinate input
+     * Supports formats:
+     * - "1.3521, 103.8198"
+     * - "1.3521,103.8198"
+     * - "lat: 1.3521, lng: 103.8198"
+     */
+    parseCoordinateInput(input) {
+        if (!input || typeof input !== 'string') {
+            return null;
+        }
+
+        // Remove whitespace and common prefixes
+        const cleaned = input.trim()
+            .replace(/lat[itude]*\s*:\s*/gi, '')
+            .replace(/lng|lon[gitude]*\s*:\s*/gi, '');
+        
+        // Try to extract two numbers (supports negative, decimals)
+        const matches = cleaned.match(/(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)/);
+        
+        if (!matches || matches.length < 3) {
+            return null;
+        }
+        
+        const lat = parseFloat(matches[1]);
+        const lng = parseFloat(matches[2]);
+        
+        // Validate ranges (standard lat/lng bounds)
+        if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return null;
+        }
+        
+        return { lat, lng };
+    }
+
+    /**
+     * Handle manual coordinate input from text fields
+     */
+    handleManualCoordinateInput(type, value) {
+        console.log(`🔍 Manual coordinate input for ${type}:`, value);
+        
+        const input = type === 'start' 
+            ? document.getElementById('fromInput')
+            : document.getElementById('toInput');
+        
+        const coords = this.parseCoordinateInput(value);
+        
+        if (!coords) {
+            // Add invalid styling
+            if (input) {
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+                setTimeout(() => input.classList.remove('invalid'), 300);
+            }
+            this.showStatusMessage(
+                '❌ Invalid coordinates. Use format: lat, lng (e.g., 1.3521, 103.8198)',
+                'error'
+            );
+            return false;
+        }
+        
+        // Add valid styling
+        if (input) {
+            input.classList.add('valid');
+            input.classList.remove('invalid');
+            setTimeout(() => input.classList.remove('valid'), 2000);
+        }
+        
+        const latlng = L.latLng(coords.lat, coords.lng);
+        
+        if (type === 'start') {
+            this.setStartPoint(latlng);
+            this.clickCount = Math.max(1, this.clickCount); // Ensure clickCount is at least 1
+            console.log('✅ Start point set from manual input:', coords);
+            this.showStatusMessage('✅ Start point updated!', 'success');
+        } else {
+            this.setEndPoint(latlng);
+            this.clickCount = Math.max(2, this.clickCount); // Ensure clickCount is at least 2
+            console.log('✅ End point set from manual input:', coords);
+            this.showStatusMessage('✅ End point set! Click "Direction" button to calculate route.', 'success');
+        }
+        
+        return true;
+    }
+
+    /**
+     * Handle marker drag and update input fields
+     * Called when start or end marker is dragged to a new position
+     */
+    handleMarkerDrag(type, latlng) {
+        console.log(`🎯 ${type} marker dragged to:`, latlng);
+        
+        // Update input field with new coordinates
+        const input = type === 'start' 
+            ? document.getElementById('fromInput')
+            : document.getElementById('toInput');
+        
+        if (input) {
+            input.value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+            console.log(`✅ Updated ${type} input field with new coordinates`);
+        }
+        
+        // Show feedback message
+        const pointName = type === 'start' ? 'Start' : 'End';
+        this.showStatusMessage(
+            `📍 ${pointName} point moved! Click "Direction" to recalculate route.`,
+            'info'
+        );
+        
+        // Note: We don't auto-recalculate the route here - user must click "Direction" button
+        // This gives them control to adjust multiple points before recalculating
+    }
+
+    /**
+     * Clear start point marker and input
+     */
+    clearStartPoint() {
+        console.log('🧹 Clearing start point');
+        
+        // Remove marker from map
+        if (this.startMarker) {
+            this.map.removeLayer(this.startMarker);
+            this.startMarker = null;
+        }
+        
+        // Clear input field
+        const fromInput = document.getElementById('fromInput');
+        if (fromInput) {
+            fromInput.value = '';
+            fromInput.classList.remove('valid', 'invalid');
+        }
+        
+        // Hide clear button
+        const clearFromBtn = document.getElementById('clearFromInput');
+        if (clearFromBtn) clearFromBtn.style.display = 'none';
+        
+        // Update click count
+        if (this.clickCount > 0) this.clickCount--;
+        
+        console.log('✅ Start point cleared');
+        this.showStatusMessage('Start point cleared', 'info');
+    }
+
+    /**
+     * Clear end point marker and input
+     */
+    clearEndPoint() {
+        console.log('🧹 Clearing end point');
+        
+        // Remove marker from map
+        if (this.endMarker) {
+            this.map.removeLayer(this.endMarker);
+            this.endMarker = null;
+        }
+        
+        // Clear input field
+        const toInput = document.getElementById('toInput');
+        if (toInput) {
+            toInput.value = '';
+            toInput.classList.remove('valid', 'invalid');
+        }
+        
+        // Hide clear button
+        const clearToBtn = document.getElementById('clearToInput');
+        if (clearToBtn) clearToBtn.style.display = 'none';
+        
+        // Update click count
+        if (this.clickCount > 1) this.clickCount--;
+        
+        console.log('✅ End point cleared');
+        this.showStatusMessage('End point cleared', 'info');
+    }
+
     addWaypoint() {
+        console.log('🔵 addWaypoint() called');
         const waypointsList = document.getElementById('waypointsList');
+        if (!waypointsList) {
+            console.error('❌ waypointsList element not found!');
+            return;
+        }
+        
         const waypointIndex = this.waypoints.length;
+        console.log(`➕ Adding waypoint #${waypointIndex + 1}`);
         
         const waypointDiv = document.createElement('div');
         waypointDiv.className = 'waypoint-item';
         waypointDiv.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 8px; background: #f8fafc; border-radius: 6px; margin-bottom: 6px;';
-        waypointDiv.innerHTML = `
-            <div style="width: 20px; height: 20px; border-radius: 50%; background: #f59e0b; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 600;">${waypointIndex + 1}</div>
-            <div style="flex: 1; font-size: 13px; color: #475569;">Click on map to set waypoint</div>
-            <button onclick="quantaRouteDemo.removeWaypoint(${waypointIndex})" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px;">×</button>
-        `;
+        
+        // Create remove button with proper event listener instead of inline onclick
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = '×';
+        removeBtn.style.cssText = 'background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; font-size: 20px;';
+        removeBtn.addEventListener('click', () => this.removeWaypoint(waypointIndex));
+        
+        // Create waypoint content
+        const numberDiv = document.createElement('div');
+        numberDiv.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; background: #f59e0b; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 600;';
+        numberDiv.textContent = waypointIndex + 1;
+        
+        const textDiv = document.createElement('div');
+        textDiv.style.cssText = 'flex: 1; font-size: 13px; color: #475569;';
+        textDiv.textContent = 'Click on map to set waypoint';
+        
+        // Append elements
+        waypointDiv.appendChild(numberDiv);
+        waypointDiv.appendChild(textDiv);
+        waypointDiv.appendChild(removeBtn);
         
         waypointsList.appendChild(waypointDiv);
         this.waypoints.push(null);
+        
+        console.log(`✅ Waypoint #${waypointIndex + 1} added successfully. Total waypoints: ${this.waypoints.length}`);
+        this.showStatusMessage(`Waypoint ${waypointIndex + 1} added! Click on the map to set its location.`, 'success');
     }
 
     removeWaypoint(index) {
-        // Remove marker
+        console.log(`🗑️ Removing waypoint #${index + 1}`);
+        
+        // Remove marker from map
         if (this.waypointMarkers[index]) {
             this.map.removeLayer(this.waypointMarkers[index]);
+            console.log(`✅ Marker removed from map for waypoint #${index + 1}`);
         }
         
         // Remove from arrays
         this.waypoints.splice(index, 1);
         this.waypointMarkers.splice(index, 1);
         
+        console.log(`✅ Waypoint #${index + 1} removed. Remaining waypoints: ${this.waypoints.length}`);
+        this.showStatusMessage(`Waypoint ${index + 1} removed!`, 'success');
+        
         // Rebuild waypoints list
         this.updateWaypointsList();
     }
 
     updateWaypointsList() {
+        console.log('🔄 Updating waypoints list');
         const waypointsList = document.getElementById('waypointsList');
+        if (!waypointsList) {
+            console.error('❌ waypointsList element not found in updateWaypointsList!');
+            return;
+        }
+        
         waypointsList.innerHTML = '';
         
         this.waypoints.forEach((waypoint, index) => {
             const waypointDiv = document.createElement('div');
             waypointDiv.className = 'waypoint-item';
             waypointDiv.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 8px; background: #f8fafc; border-radius: 6px; margin-bottom: 6px;';
-            waypointDiv.innerHTML = `
-                <div style="width: 20px; height: 20px; border-radius: 50%; background: #f59e0b; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 600;">${index + 1}</div>
-                <div style="flex: 1; font-size: 13px; color: #475569;">${waypoint ? `${waypoint.lat.toFixed(4)}, ${waypoint.lng.toFixed(4)}` : 'Click on map to set waypoint'}</div>
-                <button onclick="quantaRouteDemo.removeWaypoint(${index})" style="background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px;">×</button>
-            `;
+            
+            // Create remove button with proper event listener
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = '×';
+            removeBtn.style.cssText = 'background: none; border: none; color: #94a3b8; cursor: pointer; padding: 4px; font-size: 20px;';
+            removeBtn.addEventListener('click', () => this.removeWaypoint(index));
+            
+            // Create waypoint number indicator
+            const numberDiv = document.createElement('div');
+            numberDiv.style.cssText = 'width: 20px; height: 20px; border-radius: 50%; background: #f59e0b; display: flex; align-items: center; justify-content: center; color: white; font-size: 10px; font-weight: 600;';
+            numberDiv.textContent = index + 1;
+            
+            // Create waypoint text content
+            const textDiv = document.createElement('div');
+            textDiv.style.cssText = 'flex: 1; font-size: 13px; color: #475569;';
+            textDiv.textContent = waypoint ? `${waypoint.lat.toFixed(4)}, ${waypoint.lng.toFixed(4)}` : 'Click on map to set waypoint';
+            
+            // Append elements
+            waypointDiv.appendChild(numberDiv);
+            waypointDiv.appendChild(textDiv);
+            waypointDiv.appendChild(removeBtn);
+            
             waypointsList.appendChild(waypointDiv);
         });
+        
+        console.log(`✅ Waypoints list updated. Total: ${this.waypoints.length}`);
     }
 
     showElevationProfile(routeData) {
-        console.log('🔍 showElevationProfile called with:', {
-            currentProfile: this.currentProfile,
-            hasElevationProfile: !!routeData.elevation_profile,
-            elevationProfileLength: routeData.elevation_profile?.length || 0,
-            routeData: Object.keys(routeData)
+        this.log('🔍 showElevationProfile called', {
+            profile: this.currentProfile,
+            hasData: !!routeData.elevation_profile
         });
         
         const elevationPanel = document.getElementById('elevationPanel');
@@ -904,28 +1268,26 @@ class QuantaRouteDemo {
             return;
         }
         
-        console.log(`🎯 Profile check: "${this.currentProfile}" === "bicycle" or "foot"?`);
-        
         if (this.currentProfile === 'bicycle' || this.currentProfile === 'foot') {
-            console.log('✅ Profile matches, processing elevation data...');
-            // Generate elevation data safely - store it if generated to avoid regeneration
-            if (!routeData.elevation_profile && !routeData._cached_elevation) {
-                // Generate once and cache it on the route object
-                routeData._cached_elevation = this.generateElevationData(routeData.path);
-            }
-            const elevationData = routeData.elevation_profile || routeData._cached_elevation;
             
-            console.log('📊 Elevation data details:', {
-                source: routeData.elevation_profile ? 'from_backend' : 'generated_fallback',
-                length: elevationData?.length || 0,
-                firstPoint: elevationData?.[0],
-                lastPoint: elevationData?.[elevationData?.length - 1]
+            // Use REAL elevation data from backend (AWS Terrain Tiles)
+            const elevationData = routeData.elevation_profile;
+            
+            if (!elevationData || elevationData.length === 0) {
+                this.log('⚠️ No elevation data - hiding panel');
+                elevationPanel.style.display = 'none';
+                return;
+            }
+            
+            this.log('📊 Elevation data:', {
+                length: elevationData.length,
+                hasStats: !!routeData.elevation_stats
             });
             
             if (elevationData && elevationData.length > 0) {
                 
-                // Update elevation statistics
-                this.updateElevationStats(elevationData);
+                // Update elevation statistics (pass routeData to use backend stats)
+                this.updateElevationStats(elevationData, routeData);
                 
                 // Show the elevation panel
                 elevationPanel.style.display = 'block';
@@ -960,8 +1322,7 @@ class QuantaRouteDemo {
                     canvas.width = canvas.offsetWidth || 400;
                     canvas.height = 140;
                     
-                    // Use simple, reliable canvas drawing instead of Chart.js
-                    console.log('✅ Drawing simple elevation chart...');
+                    // Draw elevation chart
                     this.drawSimpleElevationChart(canvas, elevationData, routeData);
 
                 } catch (error) {
@@ -971,18 +1332,34 @@ class QuantaRouteDemo {
                 // Setup minimize button if not already done
                 this.setupElevationControls();
             } else {
-                console.warn('⚠️ Elevation data is empty or invalid');
                 elevationPanel.style.display = 'none';
             }
         } else {
-            console.log(`ℹ️ Current profile "${this.currentProfile}" is not bicycle or foot, hiding elevation panel`);
             elevationPanel.style.display = 'none';
         }
     }
     
 
 
-    updateElevationStats(elevationData) {
+    updateElevationStats(elevationData, routeStats = null) {
+        // Use backend-calculated stats if available (more accurate)
+        if (routeStats && routeStats.elevation_stats) {
+            const stats = routeStats.elevation_stats;
+            
+            this.log('📊 Using backend elevation stats');
+            
+            const minEl = document.getElementById('minElevation');
+            const maxEl = document.getElementById('maxElevation');
+            const gainEl = document.getElementById('elevationGain');
+            
+            if (minEl) minEl.textContent = `${Math.round(stats.min_elevation_m)}m`;
+            if (maxEl) maxEl.textContent = `${Math.round(stats.max_elevation_m)}m`;
+            if (gainEl) gainEl.textContent = `${Math.round(stats.total_ascent_m)}m`;
+            
+            return;
+        }
+        
+        // Fallback: Calculate from elevation data if backend stats not available
         const elevations = elevationData.map(d => d.elevation_m);
         const minElevation = Math.min(...elevations);
         const maxElevation = Math.max(...elevations);
@@ -993,6 +1370,8 @@ class QuantaRouteDemo {
             const diff = elevations[i] - elevations[i - 1];
             if (diff > 0) elevationGain += diff;
         }
+        
+        this.log('📊 Calculated elevation stats');
         
         // Update DOM elements
         const minEl = document.getElementById('minElevation');
@@ -1048,10 +1427,8 @@ class QuantaRouteDemo {
     }
 
     drawSimpleElevationChart(canvas, elevationData, routeData) {
-        console.log('🎨 Drawing professional elevation chart...');
-        
         if (!canvas || !elevationData || elevationData.length === 0) {
-            console.warn('Canvas or elevation data missing');
+            this.log('⚠️ Canvas or elevation data missing');
             return;
         }
         
@@ -1093,7 +1470,7 @@ class QuantaRouteDemo {
         
         // Normalize elevation data like Geoapify tutorial
         const normalizedData = this.normalizeElevationData(elevationData, routeData.distance_km);
-        console.log(`📊 Data normalized: ${elevationData.length} → ${normalizedData.length} points`);
+        this.log(`📊 Normalized data: ${elevationData.length} → ${normalizedData.length} points`);
         
         // Get data ranges with smart bounds
         const elevations = normalizedData.map(d => d.elevation_m);
@@ -1273,8 +1650,6 @@ class QuantaRouteDemo {
             ctx.textAlign = 'right';
             ctx.fillText(`${difficulty} (${avgGrade.toFixed(1)}% avg)`, width - padding.right, 32);
         }
-        
-        console.log('✅ Professional elevation chart drawn successfully');
     }
     
     getProfileConfig(profile) {
@@ -1310,14 +1685,6 @@ class QuantaRouteDemo {
                 fillTop: 'rgba(220, 38, 38, 0.4)',
                 fillBottom: 'rgba(220, 38, 38, 0.1)',
                 shadowColor: 'rgba(220, 38, 38, 0.3)'
-            },
-            'public_transport': {
-                name: 'Transit',
-                icon: '🚌',
-                lineColor: '#7c3aed',
-                fillTop: 'rgba(124, 58, 237, 0.4)',
-                fillBottom: 'rgba(124, 58, 237, 0.1)',
-                shadowColor: 'rgba(124, 58, 237, 0.3)'
             }
         };
         
@@ -1329,7 +1696,7 @@ class QuantaRouteDemo {
             return [];
         }
         
-        console.log(`🔧 Normalizing elevation data: ${elevationData.length} points for ${totalRouteDistance}km route`);
+        this.log(`🔧 Normalizing: ${elevationData.length} points for ${totalRouteDistance}km`);
         
         // Ensure distance values are properly distributed across the full route
         const normalizedPoints = elevationData.map((point, index) => ({
@@ -1372,59 +1739,12 @@ class QuantaRouteDemo {
                 finalOptimized.push(optimized[optimized.length - 1]);
             }
             
-            console.log(`📉 Further optimized: ${optimized.length} → ${finalOptimized.length} points`);
+            this.log(`📉 Further optimized: ${optimized.length} → ${finalOptimized.length} points`);
             return finalOptimized;
         }
         
-        console.log(`✅ Optimized elevation data: ${elevationData.length} → ${optimized.length} points`);
+        this.log(`✅ Optimized: ${elevationData.length} → ${optimized.length} points`);
         return optimized;
-    }
-
-    generateElevationData(path) {
-        if (!path || path.length < 2) return [];
-        
-        const points = Math.min(path.length, 50);
-        const elevationData = [];
-        let totalDistance = 0;
-        
-        for (let i = 0; i < points; i++) {
-            // Calculate realistic cumulative distance
-            if (i > 0) {
-                const pathIndex = Math.floor((i / points) * (path.length - 1));
-                const prevPathIndex = Math.floor(((i - 1) / points) * (path.length - 1));
-                
-                if (pathIndex < path.length && prevPathIndex < path.length) {
-                    const segmentDistance = this.haversineDistance(
-                        path[prevPathIndex][0], path[prevPathIndex][1],
-                        path[pathIndex][0], path[pathIndex][1]
-                    );
-                    totalDistance += segmentDistance;
-                }
-            }
-            
-            // Bengaluru elevation typically 800-950m, hilly terrain
-            const baseElevation = 850 + Math.random() * 50;
-            
-            // Add realistic terrain variation for Bengaluru
-            let variation = 0;
-            if (this.currentProfile === 'bicycle') {
-                // Cyclists prefer flatter routes
-                variation = Math.sin(i * 0.2) * 8 + Math.random() * 5;
-            } else if (this.currentProfile === 'foot') {
-                // Pedestrians can handle more elevation changes
-                variation = Math.sin(i * 0.3) * 12 + Math.random() * 8;
-            } else {
-                // General terrain
-                variation = Math.sin(i * 0.25) * 10 + Math.random() * 6;
-            }
-            
-            elevationData.push({
-                distance_km: totalDistance,
-                elevation_m: Math.max(0, baseElevation + variation)
-            });
-        }
-        
-        return elevationData;
     }
 
     haversineDistance(lat1, lng1, lat2, lng2) {
@@ -1649,7 +1969,7 @@ class QuantaRouteDemo {
             this.distanceMarkers.push(distanceMarker);
         }
         
-        console.log(`📏 Added ${this.distanceMarkers.length} distance markers to ${routeDistance.toFixed(1)}km route`);
+        this.log(`📏 Added ${this.distanceMarkers.length} distance markers`);
     }
 
     // Create custom distance marker icon
@@ -1749,7 +2069,7 @@ class QuantaRouteDemo {
 
     // Floating Directions Panel Management
     showFloatingDirections(routeData) {
-        console.log('📍 showFloatingDirections called with:', routeData);
+        this.log('📍 Showing floating directions');
         
         const floatingDirections = document.getElementById('floatingDirections');
         const directionsContent = document.getElementById('directionsContent');
@@ -1757,17 +2077,14 @@ class QuantaRouteDemo {
         const summaryTime = document.getElementById('summaryTime');
 
         if (!floatingDirections || !directionsContent) {
-            console.error('❌ Floating directions elements not found:', {
-                floatingDirections: !!floatingDirections,
-                directionsContent: !!directionsContent
-            });
+            console.error('❌ Floating directions elements not found');
             return;
         }
 
         // Update route summary
         if (summaryDistance && summaryTime) {
             summaryDistance.textContent = `${routeData.distance_km?.toFixed(1)}km`;
-            summaryTime.textContent = `${Math.round(routeData.duration_min)}min`;
+            summaryTime.textContent = this.formatDuration(routeData.duration_min);
         }
 
         // Generate enhanced turn-by-turn directions
@@ -1783,8 +2100,6 @@ class QuantaRouteDemo {
 
         // Show the floating panel with animation
         floatingDirections.classList.add('show');
-        
-        console.log('📍 Floating directions panel updated with', enhancedInstructions.length, 'steps');
     }
 
     hideFloatingDirections() {
@@ -1809,7 +2124,7 @@ class QuantaRouteDemo {
 
         // Create highlighted segment layer with vivid styling
         this.currentHighlightedSegment = L.polyline(segmentCoordinates, {
-            color: '#ff4444',
+            color: '#FFEF44',
             weight: 6,
             opacity: 0.9,
             smoothFactor: 1.0,
@@ -1825,8 +2140,6 @@ class QuantaRouteDemo {
 
         // Update visual state of instructions
         this.updateInstructionSelection(instructionIndex);
-
-        console.log(`✨ Highlighted route segment ${instructionIndex + 1} with ${segmentCoordinates.length} coordinates`);
 
         // Optional: Fit map bounds to highlighted segment for better visibility
         if (segmentCoordinates.length > 1) {
@@ -1890,19 +2203,32 @@ class QuantaRouteDemo {
     enhanceInstruction(instruction, index, routeData) {
         let turnType = this.detectTurnType(instruction.instruction);
         
-        // ✅ FIX: Use real street name from backend instead of trying to extract from text
-        let streetName = instruction.street_name || this.extractStreetName(instruction.instruction);
+        // ✅ FIX: Backend uses "name" field for road names (not "street_name")
+        // Also normalize field names: distance (meters) → distance_m, duration (seconds) → duration_s
+        let streetName = instruction.name || instruction.street_name || this.extractStreetName(instruction.instruction);
         
-        let enhancedText = this.formatInstructionText(instruction.instruction, streetName);
+        this.log(`🛣️ Instruction ${index + 1}: ${streetName || 'no street name'}`);
+        
+        // ✅ NEW: Inject street name into instruction if backend provided it but instruction text doesn't include it
+        let enhancedText = this.injectStreetNameIntoInstruction(instruction.instruction, streetName, turnType);
+        
+        // Convert geometry coordinates to segment_coordinates for highlighting
+        let segmentCoordinates = [];
+        if (instruction.geometry && instruction.geometry.coordinates) {
+            if (instruction.geometry.type === "LineString") {
+                // Convert [lon, lat] to [lat, lng] for Leaflet
+                segmentCoordinates = instruction.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+            }
+        }
         
         return {
             instruction: enhancedText,
-            distance_m: instruction.distance_m || 0,
-            duration_s: instruction.duration_s || 0,
+            distance_m: instruction.distance || instruction.distance_m || 0,  // Backend uses "distance" in meters
+            duration_s: instruction.duration || instruction.duration_s || 0,  // Backend uses "duration" in seconds
             turn_type: turnType,
-            street_name: streetName,  // ✅ Now uses real backend street name
-            location: instruction.location || null,
-            segment_coordinates: instruction.segment_coordinates || []  // Pass through segment coordinates!
+            street_name: streetName,  // ✅ Now correctly reads "name" from backend
+            location: instruction.maneuver?.location || instruction.location || null,
+            segment_coordinates: segmentCoordinates || instruction.segment_coordinates || []  // ✅ Convert geometry to segment coordinates
         };
     }
 
@@ -2149,7 +2475,89 @@ class QuantaRouteDemo {
         return null;
     }
 
-    // Format instruction text for better readability
+    // ✅ NEW: Inject actual street name from backend into instruction text
+    injectStreetNameIntoInstruction(instructionText, streetName, turnType) {
+        if (!instructionText) return instructionText;
+        
+        // If no street name from backend, return original
+        if (!streetName || streetName === '') {
+            return instructionText;
+        }
+        
+        // Clean up street name - remove common suffixes if they're generic
+        const cleanStreetName = this.cleanStreetName(streetName);
+        
+        // If instruction already mentions the street name, just highlight it
+        const lowerInstruction = instructionText.toLowerCase();
+        const lowerStreetName = cleanStreetName.toLowerCase();
+        
+        if (lowerInstruction.includes(lowerStreetName)) {
+            // Street name already in text, make it bold
+            const regex = new RegExp(`(${cleanStreetName})`, 'gi');
+            return instructionText.replace(regex, '<strong>$1</strong>');
+        }
+        
+        // ✅ Street name NOT in instruction - inject it based on turn type
+        const injectedText = this.buildInstructionWithStreetName(instructionText, cleanStreetName, turnType);
+        return injectedText;
+    }
+    
+    // Clean up street name for better display
+    cleanStreetName(streetName) {
+        if (!streetName) return '';
+        
+        // Remove "the " prefix
+        let cleaned = streetName.replace(/^the\s+/i, '');
+        
+        // If it's just generic "route" or "road", return empty (use fallback)
+        if (/^(route|road|way|path)$/i.test(cleaned.trim())) {
+            return '';
+        }
+        
+        return cleaned;
+    }
+    
+    // Build instruction text with actual street name from backend
+    buildInstructionWithStreetName(originalText, streetName, turnType) {
+        if (!streetName) return originalText;
+        
+        const lowerText = originalText.toLowerCase();
+        
+        // Pattern 1: "Turn left" → "Turn left onto [Street Name]"
+        if (lowerText.includes('turn left') && !lowerText.includes(' onto ')) {
+            return originalText.replace(/turn left/i, `Turn left onto <strong>${streetName}</strong>`);
+        }
+        
+        // Pattern 2: "Turn right" → "Turn right onto [Street Name]"
+        if (lowerText.includes('turn right') && !lowerText.includes(' onto ')) {
+            return originalText.replace(/turn right/i, `Turn right onto <strong>${streetName}</strong>`);
+        }
+        
+        // Pattern 3: "Keep left" → "Keep left on [Street Name]"
+        if (lowerText.includes('keep left') && !lowerText.includes(' on ')) {
+            return originalText.replace(/keep left/i, `Keep left on <strong>${streetName}</strong>`);
+        }
+        
+        // Pattern 4: "Keep right" → "Keep right on [Street Name]"
+        if (lowerText.includes('keep right') && !lowerText.includes(' on ')) {
+            return originalText.replace(/keep right/i, `Keep right on <strong>${streetName}</strong>`);
+        }
+        
+        // Pattern 5: "Continue" → "Continue on [Street Name]"
+        if (lowerText.includes('continue') && !lowerText.includes(' on ')) {
+            return originalText.replace(/continue/i, `Continue on <strong>${streetName}</strong>`);
+        }
+        
+        // Pattern 6: "Head" (start instruction) → "Head north on [Street Name]"
+        if (lowerText.includes('head ') && !lowerText.includes(' on ')) {
+            return originalText.replace(/head\s+(\w+)/i, `Head $1 on <strong>${streetName}</strong>`);
+        }
+        
+        // Pattern 7: Generic instruction - append street name at the end
+        return `${originalText} <span style="color: #6b7280;">on <strong>${streetName}</strong></span>`;
+    }
+    
+    // Format instruction text for better readability (LEGACY - kept for compatibility)
     formatInstructionText(originalText, streetName) {
         if (streetName) {
             // If we have a street name, make it more prominent
@@ -2170,6 +2578,13 @@ class QuantaRouteDemo {
                 `${(instruction.distance_m / 1000).toFixed(1)}km` : 
                 `${Math.round(instruction.distance_m)}m`
             ) : '';
+        
+        // Display street name if available and meaningful
+        const hasStreetName = instruction.street_name && 
+                              instruction.street_name !== '' && 
+                              instruction.street_name !== 'route' && 
+                              instruction.street_name !== 'destination' &&
+                              instruction.street_name !== 'the road';
             
         stepDiv.innerHTML = `
             <div class="step-number">${stepNumber}</div>
@@ -2180,17 +2595,15 @@ class QuantaRouteDemo {
                 <div class="step-instruction">${instruction.instruction}</div>
                 <div class="step-details">
                     ${distanceText ? `<span class="step-distance">${distanceText}</span>` : ''}
-                    ${instruction.street_name && instruction.street_name !== 'route' && instruction.street_name !== 'destination' ? 
-                        `<span style="color: #6b7280;">on ${instruction.street_name}</span>` : ''}
-                    <span class="segment-hint" style="color: #9ca3af; font-size: 11px;">click to highlight</span>
+                    ${hasStreetName ? 
+                        `<span style="color: #6b7280; font-weight: 500;">• ${instruction.street_name}</span>` : ''}
+                    <span class="segment-hint" style="color: #9ca3af; font-size: 11px; margin-left: 8px;">click to highlight</span>
                 </div>
             </div>
         `;
         
         // Add click handler for segment highlighting
         stepDiv.addEventListener('click', () => {
-            console.log('🖱️ Instruction clicked:', stepNumber, instruction);
-            
             // Check if instruction has segment coordinates
             if (instruction.segment_coordinates && instruction.segment_coordinates.length > 0) {
                 this.highlightRouteSegment(instruction.segment_coordinates, stepNumber - 1);
@@ -2200,10 +2613,8 @@ class QuantaRouteDemo {
                 setTimeout(() => {
                     stepDiv.style.backgroundColor = '';
                 }, 200);
-                
-                console.log(`📍 Highlighting segment for instruction: "${instruction.instruction}"`);
             } else {
-                console.warn('⚠️ No segment coordinates available for instruction:', instruction.instruction);
+                this.log('⚠️ No segment coordinates for:', instruction.instruction);
                 
                 // Show user feedback
                 const hint = stepDiv.querySelector('.segment-hint');
@@ -2235,58 +2646,12 @@ class QuantaRouteDemo {
         return stepDiv;
     }
 
-    // Manual test function for floating directions panel
-    testFloatingDirections() {
-        console.log('🧪 Testing floating directions panel...');
-        
-        const testRouteData = {
-            distance_km: 2.5,
-            duration_min: 6,
-            instructions: [
-                {
-                    instruction: "Continue onto Aroozoo Avenue",
-                    distance_m: 800,
-                    duration_s: 90
-                },
-                {
-                    instruction: "Turn left onto Charlton Road", 
-                    distance_m: 140,
-                    duration_s: 20
-                },
-                {
-                    instruction: "Turn left onto Upper Serangoon Road",
-                    distance_m: 200,
-                    duration_s: 30
-                },
-                {
-                    instruction: "Keep left onto Upper Serangoon Road and drive toward Serangoon Central",
-                    distance_m: 800,
-                    duration_s: 95
-                },
-                {
-                    instruction: "Turn right",
-                    distance_m: 30,
-                    duration_s: 5
-                },
-                {
-                    instruction: "Arrive at destination",
-                    distance_m: 0,
-                    duration_s: 0
-                }
-            ]
-        };
-        
-        this.showFloatingDirections(testRouteData);
-        console.log('✅ Test floating directions should now be visible');
-    }
-
     getProfileColor(profile) {
         const colors = {
             car: '#00008B',          // Dark blue
             bicycle: '#10b981',      // Green
             foot: '#f59e0b',         // Orange
-            motorcycle: '#ef4444',   // Red
-            public_transport: '#8b5cf6'  // Purple
+            motorcycle: '#ef4444'    // Red
         };
         return colors[profile] || '#64748b';
     }
@@ -2340,7 +2705,7 @@ class QuantaRouteDemo {
                 const algorithmDropdown = document.getElementById('algorithmDropdown');
                 const selectedAlgorithm = algorithmDropdown ? algorithmDropdown.value : 'quantaroute';
                 
-                console.log(`📊 Using selected algorithm: ${selectedAlgorithm}`);
+                this.log(`📊 Using algorithm: ${selectedAlgorithm}`);
                 
                 // Use the enhanced alternative routes API
                 const routeData = {
@@ -2352,7 +2717,7 @@ class QuantaRouteDemo {
                     diversity_preference: 0.7
                 };
 
-                console.log('🛣️ Calculating alternative routes with data:', routeData);
+                this.log('🛣️ Calculating alternative routes');
                 
                 const response = await this.apiCall('routing/alternatives', {
                     method: 'POST',
@@ -2383,7 +2748,7 @@ class QuantaRouteDemo {
                 }
 
                 const result = await response.json();
-                console.log('✅ Alternative routes calculated:', result);
+                this.log('✅ Alternative routes calculated');
                 this.displayAlternativeRoutesResponse(result);
                 
             } else {
@@ -2403,7 +2768,7 @@ class QuantaRouteDemo {
                         .map(wp => [wp.lat, wp.lng]);
                 }
 
-                console.log('🚀 Calculating single route with data:', routeData);
+                this.log('🚀 Calculating single route');
 
                 const response = await this.apiCall('routing', {
                     method: 'POST',
@@ -2434,6 +2799,18 @@ class QuantaRouteDemo {
                 }
 
                 const result = await response.json();
+                
+                // Convert GeoJSON geometry to [lat, lng] path for single routes
+                if (result.route && result.route.geometry) {
+                    result.path = this.extractPathFromGeometry(result.route.geometry);
+                    result.distance_km = result.route.distance / 1000;  // Convert meters to km
+                    result.duration_min = result.route.duration / 60;  // Convert seconds to minutes
+                    // ✅ CRITICAL: Copy elevation data from route to top level for display
+                    result.elevation_profile = result.route.elevation_profile || [];
+                    result.elevation_stats = result.route.elevation_stats || null;
+                    result.instructions = result.route.instructions || [];
+                }
+                
                 this.displayEnhancedRoute(result);
             }
             
@@ -2456,9 +2833,51 @@ class QuantaRouteDemo {
         }
     }
 
+    /**
+     * Extract and convert GeoJSON geometry to Leaflet [lat, lng] path format
+     * Handles both GeoJSON Feature and Geometry objects
+     */
+    extractPathFromGeometry(geometry) {
+        if (!geometry) return [];
+        
+        // Handle GeoJSON Feature (has geometry.coordinates)
+        if (geometry.geometry && geometry.geometry.coordinates) {
+            geometry = geometry.geometry;
+        }
+        
+        // Handle GeoJSON Geometry (has coordinates directly)
+        if (geometry.coordinates && Array.isArray(geometry.coordinates)) {
+            const coords = geometry.coordinates;
+            
+            // Convert [lon, lat] to [lat, lng] for Leaflet
+            return coords.map(coord => {
+                if (Array.isArray(coord) && coord.length >= 2) {
+                    return [coord[1], coord[0]];  // Swap lon,lat to lat,lng
+                }
+                return coord;
+            });
+        }
+        
+        // If it's already an array of coordinates (demo backend format)
+        if (Array.isArray(geometry) && geometry.length > 0) {
+            // Check if first element looks like [lon, lat] (lon > 90 indicates GeoJSON format)
+            if (geometry[0] && geometry[0].length === 2) {
+                if (Math.abs(geometry[0][0]) > 90) {
+                    // Looks like [lon, lat], convert to [lat, lng]
+                    return geometry.map(coord => [coord[1], coord[0]]);
+                }
+            }
+            // Already [lat, lng] format
+            return geometry;
+        }
+        
+        console.warn('⚠️ Unknown geometry format:', geometry);
+        return [];
+    }
+
     displayAlternativeRoutesResponse(data) {
         // Handle the new alternative routes API response format
-        console.log('🎨 Displaying alternative routes response:', data);
+        this.log('🎨 Displaying alternative routes');
         
         // Clear any existing routes
         this.clearAlternativeRoutes();
@@ -2468,18 +2887,23 @@ class QuantaRouteDemo {
         
         // Add optimal route first (always uses SSSP algorithm)
         if (data.optimal_route) {
+            // Convert GeoJSON geometry to [lat, lng] path for Leaflet
+            let optimalPath = this.extractPathFromGeometry(data.optimal_route.geometry || data.optimal_route.route?.geometry);
+            
             alternatives.push({
                 type: "optimal",
                 name: "🏆 Optimal Route (SSSP)",
                 description: `Shortest path using breakthrough SSSP O(m·log^{2/3}n) algorithm on real Bengaluru roads`,
-                path: data.optimal_route.path,
-                distance_km: data.optimal_route.distance_km,
-                duration_min: data.optimal_route.duration_min,
+                path: optimalPath,
+                distance_km: (data.optimal_route.distance || data.optimal_route.route?.distance) / 1000,  // Convert meters to km
+                duration_min: (data.optimal_route.duration || data.optimal_route.route?.duration) / 60,  // Convert seconds to minutes
                 is_selected: true,
                 cost_ratio: 1.0,
                 similarity_to_optimal: 1.0,
-                algorithm: data.optimal_route.algorithm,
-                instructions: data.optimal_route.instructions || []  // ✅ CRITICAL: Copy turn-by-turn instructions!
+                algorithm: data.optimal_route.algorithm || 'quantaroute',
+                instructions: data.optimal_route.instructions || [],  // ✅ CRITICAL: Copy turn-by-turn instructions!
+                elevation_profile: data.optimal_route.elevation_profile || data.optimal_route.route?.elevation_profile || [],  // ✅ CRITICAL: Copy elevation data!
+                elevation_stats: data.optimal_route.elevation_stats || data.optimal_route.route?.elevation_stats || null  // ✅ CRITICAL: Copy elevation stats!
             });
         }
         
@@ -2489,24 +2913,29 @@ class QuantaRouteDemo {
         if (hasAlternatives) {
             // Add alternative routes (using advanced algorithms)
             data.alternative_routes.forEach((alt, index) => {
+                // Convert GeoJSON geometry to [lat, lng] path for Leaflet
+                let altPath = this.extractPathFromGeometry(alt.geometry || alt.route?.geometry);
+                
                 alternatives.push({
                     type: `alternative_${index + 1}`,
                     name: alt.route_name,
                     description: alt.route_description + ` (using ${data.computation_method} algorithm)`,
-                    path: alt.path,
-                    distance_km: alt.distance_km,
-                    duration_min: alt.duration_min,
+                    path: altPath,
+                    distance_km: (alt.distance || alt.route?.distance) / 1000,  // Convert meters to km
+                    duration_min: (alt.duration || alt.route?.duration) / 60,  // Convert seconds to minutes
                     is_selected: false,
                     cost_ratio: alt.cost_ratio,
                     similarity_to_optimal: alt.similarity_to_optimal,
                     route_preference_score: alt.route_preference_score,
-                    algorithm: alt.algorithm,
-                    instructions: alt.instructions || []  // ✅ CRITICAL: Copy turn-by-turn instructions!
+                    algorithm: alt.algorithm || data.computation_method,
+                    instructions: alt.instructions || [],  // ✅ CRITICAL: Copy turn-by-turn instructions!
+                    elevation_profile: alt.elevation_profile || alt.route?.elevation_profile || [],  // ✅ CRITICAL: Copy elevation data!
+                    elevation_stats: alt.elevation_stats || alt.route?.elevation_stats || null  // ✅ CRITICAL: Copy elevation stats!
                 });
             });
         } else {
-            // No alternative routes found - add informational message
-            console.log('⚠️ No alternative routes found for this route');
+            // No alternative routes found
+            this.log('⚠️ No alternative routes found');
         }
         
         // Store for selection handling
@@ -2524,16 +2953,9 @@ class QuantaRouteDemo {
                 const isSelected = alternative.is_selected;
                 const routeColor = isSelected ? this.getProfileColor(this.currentProfile) : this.getAlternativeColor(index, this.currentProfile);
                 
-                // Draw connector lines and get adjusted path
-                const adjustedPath = this.drawRouteWithConnectors(
-                    alternative.path, 
-                    clickedStart, 
-                    clickedEnd, 
-                    isSelected,
-                    routeColor
-                );
-                
-                const routeLayer = L.polyline(adjustedPath, {
+                // QuantaRoute API routes already connect properly - no need for connector lines
+                // Just use the path directly
+                const routeLayer = L.polyline(alternative.path, {
                     color: routeColor,
                     weight: isSelected ? 14 : 8,
                     opacity: isSelected ? 0.8 : 0.6,
@@ -2541,8 +2963,13 @@ class QuantaRouteDemo {
                     lineJoin: 'round'
                 }).addTo(this.map);
                 
-                // Add click handler
+                // Add click handler to select alternative
                 routeLayer.on('click', () => this.selectAlternativeRoute(index));
+                
+                // Add distance markers for the selected route
+                if (isSelected && alternative.distance_km) {
+                    this.addDistanceMarkersToRoute(alternative.path, alternative.distance_km);
+                }
                 
                 this.alternativeRouteLayers.push({
                     layer: routeLayer,
@@ -2564,6 +2991,12 @@ class QuantaRouteDemo {
         
         // Show alternative routes UI with proper messaging
         this.showAlternativeRoutesUI(alternatives, data, !hasAlternatives);
+        
+        // Show turn-by-turn directions for the selected (optimal) route
+        this.showFloatingDirections(selectedRoute);
+        
+        // Show elevation profile for selected route
+        this.showElevationProfile(selectedRoute);
         
         // Show clear button
         const clearButton = document.getElementById('clearRoute');
@@ -2631,7 +3064,6 @@ class QuantaRouteDemo {
         this.updateEnhancedRouteInfo(routeData);
 
         // Show floating turn-by-turn directions panel
-        console.log('🎯 About to show floating directions for single route');
         this.showFloatingDirections(routeData);
 
         // Show elevation profile for cycling and walking
@@ -2783,7 +3215,7 @@ class QuantaRouteDemo {
                 headerDiv.innerHTML = `
                     <div class="algorithm-badge" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span class="algorithm-name" style="font-weight: 600; color: #1e40af;">SSSP Algorithm</span>
-                        <span class="algorithm-time" style="color: #059669; font-weight: 500;">${data.total_compute_time_ms.toFixed(0)}ms</span>
+                        <span class="algorithm-time" style="color: #059669; font-weight: 500;">${(data.compute_time_ms || data.total_compute_time_ms || 0).toFixed(0)}ms</span>
                     </div>
                     <div class="no-alternatives-message" style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 6px; padding: 8px; font-size: 12px; color: #92400e;">
                         <strong>ℹ️ No alternative routes available</strong><br>
@@ -2795,14 +3227,14 @@ class QuantaRouteDemo {
                 // Normal header with diversity metrics
                 headerDiv.innerHTML = `
                     <div class="algorithm-badge" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span class="algorithm-name" style="font-weight: 600; color: #1e40af;">SSSP + ${data.computation_method.toUpperCase()} Algorithms</span>
-                        <span class="algorithm-time" style="color: #059669; font-weight: 500;">${data.total_compute_time_ms.toFixed(0)}ms</span>
+                        <span class="algorithm-name" style="font-weight: 600; color: #1e40af;">SSSP + ${(data.computation_method || 'FAST').toUpperCase()} Algorithms</span>
+                        <span class="algorithm-time" style="color: #059669; font-weight: 500;">${(data.compute_time_ms || data.total_compute_time_ms || 0).toFixed(0)}ms</span>
                     </div>
                     ${data.diversity_metrics ? `
                     <div class="diversity-stats" style="display: flex; gap: 16px; font-size: 12px; color: #6b7280;">
-                        <span class="diversity-stat">Avg Similarity: ${(data.diversity_metrics.avg_similarity * 100).toFixed(0)}%</span>
-                        <span class="diversity-stat">Max Cost Ratio: ${data.diversity_metrics.max_cost_ratio.toFixed(1)}x</span>
-                        <span class="diversity-stat">Diversity Index: ${(data.diversity_metrics.diversity_index * 100).toFixed(0)}%</span>
+                        <span class="diversity-stat">Avg Similarity: ${((data.diversity_metrics.avg_similarity || 0) * 100).toFixed(0)}%</span>
+                        <span class="diversity-stat">Max Cost Ratio: ${(data.diversity_metrics.max_cost_ratio || 1.0).toFixed(1)}x</span>
+                        <span class="diversity-stat">Diversity Index: ${((data.diversity_metrics.diversity_index || 0) * 100).toFixed(0)}%</span>
                     </div>` : ''}
                 `;
             }
@@ -2827,18 +3259,18 @@ class QuantaRouteDemo {
                 <div class="alternative-info">
                     <div class="alternative-header" style="display: flex; align-items: center; margin-bottom: 4px;">
                         <div class="route-color-indicator" style="background-color: ${routeColor}; width: 4px; height: 20px; border-radius: 2px; margin-right: 8px;"></div>
-                        <div class="alternative-name" style="flex: 1; font-weight: 500;">${alternative.name}</div>
+                        <div class="alternative-name" style="flex: 1; font-weight: 500;">${alternative.name || 'Route ' + (index + 1)}</div>
                         ${costRatio > 1.0 ? `<div class="cost-indicator" style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 10px; font-size: 11px; font-weight: 500;">+${costDiff}%</div>` : ''}
                     </div>
-                    <div class="alternative-description">${alternative.description}</div>
+                    <div class="alternative-description">${alternative.description || ''}</div>
                     <div class="alternative-stats">
-                        <span class="alternative-stat">📏 <strong>${alternative.distance_km.toFixed(1)} km</strong></span>
-                        <span class="alternative-stat">⏱️ <strong>${alternative.duration_min.toFixed(0)} min</strong></span>
+                        <span class="alternative-stat">📏 <strong>${(alternative.distance_km || 0).toFixed(1)} km</strong></span>
+                        <span class="alternative-stat">⏱️ <strong>${this.formatDuration(alternative.duration_min)}</strong></span>
                         ${similarity < 1.0 ? `<span class="alternative-stat">🔄 ${(similarity * 100).toFixed(0)}% similar</span>` : ''}
                     </div>
                     ${alternative.route_preference_score ? `
                     <div class="preference-score" style="font-size: 11px; color: #6b7280; margin-top: 4px;">
-                        Route Score: ${alternative.route_preference_score.toFixed(2)}/5.0
+                        Route Score: ${(alternative.route_preference_score || 0).toFixed(2)}/5.0
                     </div>` : ''}
                 </div>
                 <div class="alternative-actions">
@@ -2917,8 +3349,7 @@ class QuantaRouteDemo {
                 'car': 'Driving',
                 'bicycle': 'Cycling', 
                 'foot': 'Walking',
-                'motorcycle': 'Motorcycle',
-                'public_transport': 'Transit'
+                'motorcycle': 'Motorcycle'
             };
             document.getElementById('routeMode').textContent = modeNames[this.currentProfile] || 'Driving';
         }
@@ -3032,7 +3463,6 @@ class QuantaRouteDemo {
         // Close any open popups
         this.map.closePopup();
 
-        console.log('🧹 Enhanced route cleared');
         this.showStatusMessage('🎯 Click anywhere on the map to set your start point!', 'info');
     }
 
@@ -3054,7 +3484,6 @@ class QuantaRouteDemo {
             case 'motorcycle': speed_kmh = 40; break;
             case 'bicycle': speed_kmh = 15; break;
             case 'foot': speed_kmh = 5; break;
-            case 'public_transport': speed_kmh = 25; break;
         }
         const duration_min = (distance_km / speed_kmh) * 60;
         

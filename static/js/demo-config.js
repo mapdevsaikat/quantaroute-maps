@@ -50,12 +50,13 @@ class DemoConfig {
     getConfig() {
         const configs = {
             local: {
-                apiBaseUrl: 'http://localhost:8000/api',
+                // Updated to match actual API endpoints: localhost:8080/v1/routing
+                apiBaseUrl: 'http://localhost:8080/v1',
                 displayName: '🏠 Local Demo',
-                description: 'Using local QuantaRoute instance on localhost:8000',
-                authRequired: false,
-                healthCheck: true,
-                requiresTrailingSlash: false  // Local API doesn't need trailing slashes
+                description: 'Using local QuantaRoute instance on localhost:8080',
+                authRequired: true,
+                apiKey: 'demo_enterprise_api_key_quantaroute_2024',
+                healthCheck: true
             },
             remote: {
                 // Production QuantaRoute API
@@ -65,8 +66,7 @@ class DemoConfig {
                 description: 'Using QuantaRoute Cloud API (routing.api.quantaroute.com)',
                 authRequired: true,
                 apiKey: window.QUANTAROUTE_API_KEY || 'demo_enterprise_api_key_quantaroute_2024',
-                healthCheck: true,
-                requiresTrailingSlash: true  // Production API requires trailing slashes (FastAPI)
+                healthCheck: true
             }
         };
 
@@ -91,14 +91,17 @@ class DemoConfig {
         // Remove leading slash if present
         endpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
         
-        // Add trailing slash for remote mode (FastAPI requirement)
-        if (this.config.requiresTrailingSlash && !endpoint.includes('?') && !endpoint.endsWith('/')) {
-            // Don't add trailing slash if endpoint has query parameters
-            const hasQueryParams = endpoint.includes('?');
-            if (!hasQueryParams) {
-                endpoint = `${endpoint}/`;
-            }
+        // Handle custom demo endpoints that don't exist in QuantaRoute API
+        // These return mock data or fallback to defaults
+        if (endpoint === 'bengaluru-bounds' || endpoint === 'search?q=') {
+            // Return null to indicate these should be handled client-side
+            return null;
         }
+        
+        // DON'T add trailing slash for routing endpoints
+        // The v1 routing API endpoints are defined WITHOUT trailing slashes
+        // e.g., /v1/routing/, /v1/routing/alternatives, /v1/routing/turn-by-turn
+        // Adding trailing slash causes FastAPI redirects which can break POST requests
         
         return `${this.config.apiBaseUrl}/${endpoint}`;
     }
@@ -108,10 +111,10 @@ class DemoConfig {
             'Content-Type': 'application/json'
         };
 
-        // Add API key for remote mode using Bearer token format (FastAPI standard)
-        if (this.mode === 'remote' && this.config.authRequired && this.config.apiKey) {
+        // Add API key using Bearer token format (FastAPI standard)
+        if (this.config.authRequired && this.config.apiKey) {
             headers['Authorization'] = `Bearer ${this.config.apiKey}`;
-            console.log('✅ Authorization header added for remote mode');
+            console.log(`✅ Authorization header added (${this.mode} mode)`);
         } else {
             console.log('⚠️ No Authorization header added:', {
                 mode: this.mode,
@@ -125,10 +128,12 @@ class DemoConfig {
 
     async checkHealth() {
         try {
-            // Health check endpoint (no /v1 prefix needed)
-            const healthUrl = this.mode === 'local' 
-                ? `${this.config.apiBaseUrl}/health`
-                : `${this.config.apiBaseUrl.replace('/v1', '')}/health`;
+            // Health check endpoint (no /v1 prefix)
+            // Both local and remote use the same base domain structure
+            const baseUrl = this.config.apiBaseUrl.replace(/\/v1.*$/, '');
+            const healthUrl = `${baseUrl}/health`;
+            
+            console.log(`🏥 Health check URL: ${healthUrl}`);
             
             const response = await fetch(healthUrl, {
                 headers: this.getHeaders()

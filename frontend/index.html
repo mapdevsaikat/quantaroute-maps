@@ -65,7 +65,8 @@
                     <h3 class="card-title">📍 Route Planning</h3>
                     
                     <div class="search-box">
-                        <input type="text" class="search-input" id="fromInput" placeholder="From: Search or click on map">
+                        <input type="text" class="search-input" id="fromInput" placeholder="From: Click map or enter lat, lng">
+                        <button class="clear-input-btn" id="clearFromInput" title="Clear start point">×</button>
                         <div class="search-results" id="fromResults" style="display: none;"></div>
                     </div>
                     
@@ -76,7 +77,8 @@
                     </div>
                     
                     <div class="search-box">
-                        <input type="text" class="search-input" id="toInput" placeholder="To: Search or click on map">
+                        <input type="text" class="search-input" id="toInput" placeholder="To: Click map or enter lat, lng">
+                        <button class="clear-input-btn" id="clearToInput" title="Clear end point">×</button>
                         <div class="search-results" id="toResults" style="display: none;"></div>
                     </div>
 
@@ -93,7 +95,6 @@
                             <button class="mode-btn" data-profile="foot" title="Walking">🚶</button>
                             <button class="mode-btn" data-profile="bicycle" title="Cycling">🚲</button>
                             <button class="mode-btn" data-profile="motorcycle" title="Motorcycle">🏍️</button>
-                            <button class="mode-btn" data-profile="public_transport" title="Public Transit">🚌</button>
                         </div>
                     </div>
 
@@ -111,28 +112,24 @@
                             📊 Alternative Algorithm:
                         </label>
                         <select id="algorithmDropdown" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; background: white;">
-                            <optgroup label="⚡ Fast (Recommended)">
-                                <option value="quantaroute" selected>Fast Exclusion (Default - Fastest)</option>
-                                <option value="adaptive">Adaptive (Smart, Context-aware)</option>
-                                <option value="perturbation">Perturbation (Weight variation)</option>
-                                <option value="highway">Highway Avoidance</option>
-                                <option value="major">Major Road Exclusion</option>
+                            <optgroup label="🎯 A* Algorithms (Recommended - Profile-Aware)">
+                                <option value="plateau" selected>Plateau A* (Best Quality)</option>
+                                <option value="penalty">Penalty A* (Most Diverse)</option>
+                                <option value="via_point">Via Point A* (Strategic Routes)</option>
+                                <option value="corridor">Corridor A* (Area-Based)</option>
+                                <option value="multi_objective">Multi-Objective A* (Balanced)</option>
                             </optgroup>
-                            <optgroup label="🎯 Advanced A* (Slower, More Diverse)">
-                                <option value="plateau">Plateau (Similar cost paths)</option>
-                                <option value="penalty">Penalty (Edge penalization)</option>
-                                <option value="via_point">Via Point (Strategic detours)</option>
-                                <option value="corridor">Corridor (Area-based)</option>
-                                <option value="multi_objective">Multi-Objective (Balanced)</option>
+                            <optgroup label="⚡ Simple Algorithms (Fastest)">
+                                <option value="quantaroute">Fast Exclusion (Simple & Quick)</option>
                             </optgroup>
                         </select>
                         <div id="algorithmHelp" style="margin-top: 5px; padding: 8px; background: #f8f9fa; border-left: 3px solid #3498db; font-size: 11px; line-height: 1.4; color: #555; border-radius: 3px;">
-                            <strong>Fast Exclusion:</strong> Quickest alternative route generation. Best for most use cases.
+                            🎯 <strong>Plateau A*:</strong> Finds routes with similar total cost using A* heuristics. <em>Best quality, profile-aware (5-10s).</em>
                         </div>
                     </div>
 
                     <button class="route-btn" id="calculateRoute">
-                        Calculate Route
+                        Directions
                     </button>
                 </div>
 
@@ -284,6 +281,8 @@
 
     <!-- Demo scripts -->
     <script src="../static/js/exploration_visualizer.js"></script>
+    <!-- API Configuration (loaded from GitHub Secrets during deployment) -->
+    <script src="../api-config.js"></script>
     <!-- Demo Configuration (supports local and remote API modes) -->
     <script src="../static/js/demo-config.js"></script>
     <script src="../static/js/demo.js"></script>

@@ -28,31 +28,37 @@ This comprehensive demo showcases why QuantaRoute is the **most efficient routin
 
 ## 🚀 **Quick Start**
 
-### **🎯 Enhanced Navigation Demo (Recommended)**
+### **Prerequisites**
+
+First, start the main QuantaRoute API server (in a separate terminal):
 
 ```bash
-cd quantaroute-maps
-python start_navigation_demo.py
+cd /Users/saikat.maiti/Documents/sssp
+python start_api_server.py
+```
+
+This loads the Bengaluru road network once and keeps it cached for instant routing.
+
+### **🎯 Navigation Demo (Unified Architecture)**
+
+```bash
+cd demo-app
+python start_demo.py
 ```
 
 **Experience:**
 - Complete navigation interface at http://localhost:3000/frontend/
-- Multi-profile routing with real Bengaluru data
+- Multi-profile routing with real Bengaluru data (4 profiles: car, bicycle, foot, motorcycle)
 - Location search with popular Bengaluru destinations (Airport, MG Road, Whitefield, Koramangala, etc.)
 - Elevation profiles for Bengaluru's hilly terrain
 - Waypoint management for complex trips
+- **Instant startup** - uses cached graphs from main API server (2-5s vs 30s+ per profile)
 
-### **📊 Algorithm Performance Demo**
-
-```bash
-cd demo-app
-python start_simple_demo.py
-```
-
-**Compare algorithms:**
-- QuantaRoute SSSP vs Traditional Dijkstra
-- Real-time performance metrics
-- Algorithm complexity visualization
+**Benefits of Unified Architecture:**
+- ⚡ Instant startup (no graph rebuilding)
+- 💾 Uses cached graphs (2-5s vs 210-230s)
+- 🏗️ Single source of truth (production-like setup)
+- 🚀 Real-time performance metrics
 
 ---
 
@@ -115,18 +121,20 @@ python start_simple_demo.py
 ```
 demo-app/
 ├── README.md                     # This guide
-├── start_simple_demo.py          # 🎯 Main navigation demo
+├── start_demo.py                 # 🎯 Unified demo launcher (uses main API)
 ├── requirements.txt              # Python dependencies
-├── backend/
-│   ├── app.py                   # Original performance demo API
-│   └── real_routing_app.py      # Enhanced Singapore routing API
 ├── frontend/
 │   └── index.html              # Clean navigation interface
 └── static/
     ├── css/demo.css            # Modern styling
     └── js/
-        └── demo.js            # Navigation functionality
+        └── demo.js            # Navigation functionality (connects to port 8080)
 ```
+
+**Note:** This demo connects to the main QuantaRoute API server (port 8080) rather than starting its own backend. This provides:
+- Instant startup using cached graphs
+- Single source of truth for routing data
+- Production-like architecture
 
 ---
 
