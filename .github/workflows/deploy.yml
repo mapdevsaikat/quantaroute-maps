@@ -25,6 +25,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build production JavaScript (minify)
+        run: npm run build
+        
+      - name: Verify minified file exists
+        run: |
+          if [ -f "static/js/demo.min.js" ]; then
+            echo "✅ Minified file created successfully"
+            ls -lh static/js/demo*.js*
+          else
+            echo "❌ Minified file not found!"
+            exit 1
+          fi
+
       - name: Create API config file
         run: |
           mkdir -p dist
@@ -48,6 +70,9 @@ jobs:
           cp README.md dist/
           cp LICENSE dist/ 2>/dev/null || true
           cp .nojekyll dist/ 2>/dev/null || true
+          echo "✅ Files copied to dist/"
+          echo "📊 Checking minified files in dist:"
+          ls -lh dist/static/js/demo*.js* || echo "Warning: demo.min.js not found in dist"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

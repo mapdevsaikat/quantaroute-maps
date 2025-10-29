@@ -64,8 +64,13 @@
                 <div class="control-card">
                     <h3 class="card-title">📍 Route Planning</h3>
                     
+                    <!-- Route Points Display (A, B, C labels) -->
+                    <div class="route-points-display" id="routePointsDisplay" style="margin-bottom: 16px;">
+                        <!-- This will be populated dynamically with labeled points -->
+                    </div>
+                    
                     <div class="search-box">
-                        <input type="text" class="search-input" id="fromInput" placeholder="From: Click map or enter lat, lng">
+                        <input type="text" class="search-input" id="fromInput" placeholder="🅰️ Start: Click map or search location">
                         <button class="clear-input-btn" id="clearFromInput" title="Clear start point">×</button>
                         <div class="search-results" id="fromResults" style="display: none;"></div>
                     </div>
@@ -77,7 +82,7 @@
                     </div>
                     
                     <div class="search-box">
-                        <input type="text" class="search-input" id="toInput" placeholder="To: Click map or enter lat, lng">
+                        <input type="text" class="search-input" id="toInput" placeholder="🅱️ Destination: Click map or search location">
                         <button class="clear-input-btn" id="clearToInput" title="Clear end point">×</button>
                         <div class="search-results" id="toResults" style="display: none;"></div>
                     </div>
@@ -85,7 +90,7 @@
                     <!-- Waypoints -->
                     <div class="waypoints-list" id="waypointsList"></div>
                     <button class="add-waypoint-btn" id="addWaypoint">
-                        + Add Stop
+                        ➕ Add Stop Between Start & End
                     </button>
 
                     <!-- Transport Mode - Compact -->
@@ -131,47 +136,47 @@
                     <button class="route-btn" id="calculateRoute">
                         Directions
                     </button>
-                </div>
 
-                <!-- Clear Route Button -->
-                <button id="clearRoute" class="btn btn-secondary" style="display: none;">
-                    🧹 Clear Route
-                </button>
+                    <!-- Clear Route Button -->
+                    <button id="clearRoute" class="btn btn-secondary" style="display: none; margin-top: 12px;">
+                        🧹 Clear Route
+                    </button>
 
-                <!-- Route Information -->
-                <div class="route-summary" id="routeInfo" style="display: none;">
-                    <div class="route-header">
-                        <h3 class="route-title">🧭 Directions</h3>
-                    </div>
-                    <div class="route-stats">
-                        <div class="route-stat">
-                            <div class="stat-value" id="routeDistance">-</div>
-                            <div class="stat-label">Distance</div>
+                    <!-- Route Information -->
+                    <div class="route-summary" id="routeInfo" style="display: none; margin-top: 16px;">
+                        <div class="route-header">
+                            <h3 class="route-title">🧭 Directions</h3>
                         </div>
-                        <div class="route-stat">
-                            <div class="stat-value" id="routeDuration">-</div>
-                            <div class="stat-label">Duration</div>
+                        <div class="route-stats">
+                            <div class="route-stat">
+                                <div class="stat-value" id="routeDistance">-</div>
+                                <div class="stat-label">Distance</div>
+                            </div>
+                            <div class="route-stat">
+                                <div class="stat-value" id="routeDuration">-</div>
+                                <div class="stat-label">Duration</div>
+                            </div>
+                            <div class="route-stat">
+                                <div class="stat-value" id="routeMode">-</div>
+                                <div class="stat-label">Mode</div>
+                            </div>
                         </div>
-                        <div class="route-stat">
-                            <div class="stat-value" id="routeMode">-</div>
-                            <div class="stat-label">Mode</div>
+                            
+                        <!-- Simple Performance Indicator -->
+                        <div class="performance-indicator" id="performanceIndicator" style="display: none;">
+                            <span id="routeComputeTime">Route calculated in -</span>
                         </div>
                     </div>
-                        
-                    <!-- Simple Performance Indicator -->
-                    <div class="performance-indicator" id="performanceIndicator" style="display: none;">
-                        <span id="routeComputeTime">Route calculated in -</span>
-                    </div>
-                </div>
 
-                <!-- Alternative Routes Section -->
-                <div class="alternative-routes" id="alternativeRoutes" style="display: none;">
-                    <div class="alternative-header">
-                        <h3 class="alternative-title">🛣️ Route Options</h3>
-                        <span class="alternative-count" id="alternativeCount">3 routes found</span>
-                    </div>
-                    <div class="route-alternatives" id="routeAlternativesList">
-                        <!-- Alternative routes will be populated here by JavaScript -->
+                    <!-- Alternative Routes Section -->
+                    <div class="alternative-routes" id="alternativeRoutes" style="display: none; margin-top: 16px;">
+                        <div class="alternative-header">
+                            <h3 class="alternative-title">🛣️ Route Options</h3>
+                            <span class="alternative-count" id="alternativeCount">3 routes found</span>
+                        </div>
+                        <div class="route-alternatives" id="routeAlternativesList">
+                            <!-- Alternative routes will be populated here by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -285,6 +290,26 @@
     <script src="../api-config.js"></script>
     <!-- Demo Configuration (supports local and remote API modes) -->
     <script src="../static/js/demo-config.js"></script>
-    <script src="../static/js/demo.js"></script>
+    
+    <!-- Smart loader: Use minified version in production, full version in development -->
+    <script>
+        // Detect environment based on hostname
+        var isProduction = window.location.hostname !== 'localhost' && 
+                          window.location.hostname !== '127.0.0.1' &&
+                          !window.location.hostname.includes('local');
+        
+        // Load appropriate version using document.write (synchronous, blocking)
+        var scriptSrc = isProduction 
+            ? '../static/js/demo.min.js'    // Production: minified, no console logs
+            : '../static/js/demo.js';        // Development: full version with logs
+        
+        // Use document.write for synchronous loading (old school but reliable)
+        document.write('<script src="' + scriptSrc + '"><\/script>');
+        
+        // Log which version will be loaded (only in dev)
+        if (!isProduction && typeof console !== 'undefined') {
+            console.log('🔧 Development mode: Loading full demo.js with console logs');
+        }
+    </script>
 </body>
 </html>

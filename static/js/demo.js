@@ -165,8 +165,20 @@ class QuantaRouteDemo {
 
     /**
      * Show mode indicator in the UI
+     * Hidden in production (GitHub Pages) for cleaner appearance
      */
     showModeIndicator() {
+        // Hide mode indicator in production (GitHub Pages)
+        const isProduction = window.location.hostname !== 'localhost' && 
+                            window.location.hostname !== '127.0.0.1' &&
+                            !window.location.hostname.includes('local');
+        
+        if (isProduction) {
+            console.log('🎯 Production mode: Mode indicator hidden');
+            return; // Don't show indicator in production
+        }
+        
+        // Only show in development (localhost)
         const info = this.config.getDisplayInfo();
         const indicator = document.createElement('div');
         indicator.className = 'fixed top-4 right-4 bg-white rounded-lg shadow-lg p-3 z-[10000] text-sm';
@@ -382,11 +394,17 @@ class QuantaRouteDemo {
 
     handleMapClick(e) {
         const latlng = e.latlng;
+        console.log('🗺️ Map clicked at:', latlng);
         
         // Check if we're setting a waypoint
         const waitingForWaypoint = this.waypoints.findIndex(wp => wp === null);
+        console.log('🔍 Checking for waiting waypoint. Index:', waitingForWaypoint);
+        console.log('🔍 Current waypoints array:', this.waypoints);
+        
         if (waitingForWaypoint !== -1) {
+            console.log(`✅ Setting waypoint ${waitingForWaypoint + 1} at:`, latlng);
             this.waypoints[waitingForWaypoint] = latlng;
+            console.log('🔍 Waypoints array after setting:', this.waypoints);
             
             // Create waypoint marker
             const waypointMarker = L.marker([latlng.lat, latlng.lng], {
@@ -395,7 +413,14 @@ class QuantaRouteDemo {
             
             this.waypointMarkers[waitingForWaypoint] = waypointMarker;
             this.updateWaypointsList();
-            this.showStatusMessage(`Waypoint ${waitingForWaypoint + 1} set!`, 'success');
+            
+            // Show message to remind user to click "Direction" button
+            if (this.startMarker && this.endMarker) {
+                this.showStatusMessage(`Waypoint ${waitingForWaypoint + 1} set! Click "Direction" button to recalculate route.`, 'success');
+            } else {
+                this.showStatusMessage(`Waypoint ${waitingForWaypoint + 1} set!`, 'success');
+            }
+            
             return;
         }
         
@@ -559,6 +584,9 @@ class QuantaRouteDemo {
         // Show clear route button once we have a start point
         const clearButton = document.getElementById('clearRoute');
         if (clearButton) clearButton.style.display = 'block';
+        
+        // Update route points display
+        this.updateRoutePointsDisplay();
     }
 
     setEndPoint(latlng) {
@@ -598,6 +626,9 @@ class QuantaRouteDemo {
         if (clearToBtn) clearToBtn.style.display = 'flex';
 
         this.showStatusMessage('✅ Destination set! Click "Calculate Route" to navigate.', 'success');
+        
+        // Update route points display
+        this.updateRoutePointsDisplay();
     }
 
     // Enhanced navigation methods
@@ -1119,6 +1150,9 @@ class QuantaRouteDemo {
         
         console.log('✅ Start point cleared');
         this.showStatusMessage('Start point cleared', 'info');
+        
+        // Update route points display
+        this.updateRoutePointsDisplay();
     }
 
     /**
@@ -1149,10 +1183,15 @@ class QuantaRouteDemo {
         
         console.log('✅ End point cleared');
         this.showStatusMessage('End point cleared', 'info');
+        
+        // Update route points display
+        this.updateRoutePointsDisplay();
     }
 
     addWaypoint() {
         console.log('🔵 addWaypoint() called');
+        console.log('🔍 Current waypoints before adding:', this.waypoints);
+        
         const waypointsList = document.getElementById('waypointsList');
         if (!waypointsList) {
             console.error('❌ waypointsList element not found!');
@@ -1160,7 +1199,7 @@ class QuantaRouteDemo {
         }
         
         const waypointIndex = this.waypoints.length;
-        console.log(`➕ Adding waypoint #${waypointIndex + 1}`);
+        console.log(`➕ Adding waypoint slot #${waypointIndex + 1}`);
         
         const waypointDiv = document.createElement('div');
         waypointDiv.className = 'waypoint-item';
@@ -1253,6 +1292,201 @@ class QuantaRouteDemo {
         });
         
         console.log(`✅ Waypoints list updated. Total: ${this.waypoints.length}`);
+        
+        // Update the route points display (A, B, C labels)
+        this.updateRoutePointsDisplay();
+    }
+
+    /**
+     * Update the route points display with A, B, C labeled cards (MapView.js style)
+     */
+    updateRoutePointsDisplay() {
+        const display = document.getElementById('routePointsDisplay');
+        if (!display) return;
+        
+        // Clear existing display
+        display.innerHTML = '';
+        
+        // Create combined list of all points
+        const allPoints = [];
+        
+        // Add start point
+        if (this.startMarker) {
+            const startLatLng = this.startMarker.getLatLng();
+            allPoints.push({
+                type: 'start',
+                latlng: startLatLng,
+                index: -1
+            });
+        }
+        
+        // Add waypoints
+        this.waypoints.forEach((waypoint, index) => {
+            if (waypoint) {
+                allPoints.push({
+                    type: 'waypoint',
+                    latlng: waypoint,
+                    index: index
+                });
+            }
+        });
+        
+        // Add end point
+        if (this.endMarker) {
+            const endLatLng = this.endMarker.getLatLng();
+            allPoints.push({
+                type: 'end',
+                latlng: endLatLng,
+                index: -1
+            });
+        }
+        
+        // If no points set, hide the display
+        if (allPoints.length === 0) {
+            display.style.display = 'none';
+            return;
+        }
+        
+        display.style.display = 'flex';
+        
+        // Create compact cards for each point
+        allPoints.forEach((point, displayIndex) => {
+            const letter = String.fromCharCode(65 + displayIndex); // A, B, C, D...
+            const isLast = displayIndex === allPoints.length - 1;
+            
+            const card = document.createElement('div');
+            card.className = 'route-point-card';
+            
+            // Simple text label with color
+            const label = document.createElement('span');
+            label.className = `route-point-label ${point.type}`;
+            label.textContent = point.type === 'start' ? 'Start' :
+                                point.type === 'end' ? 'Destination' : `Stop`;
+            label.style.cssText = `
+                font-weight: 600;
+                font-size: 11px;
+                color: ${point.type === 'start' ? '#52c41a' : point.type === 'end' ? '#f5222d' : '#1890ff'};
+                margin-right: 8px;
+            `;
+            
+            // Coordinates
+            const coords = document.createElement('span');
+            coords.className = 'route-point-coords';
+            coords.textContent = `${point.latlng.lat.toFixed(5)}, ${point.latlng.lng.toFixed(5)}`;
+            coords.style.cssText = 'flex: 1; font-size: 13px; color: #333;';
+            
+            // Controls for waypoints
+            if (point.type === 'waypoint') {
+                const controls = document.createElement('div');
+                controls.className = 'route-point-controls';
+                controls.style.cssText = 'display: flex; gap: 4px; margin-left: 8px;';
+                
+                // Move up button
+                if (displayIndex > 1) {
+                    const upBtn = document.createElement('button');
+                    upBtn.innerHTML = '↑';
+                    upBtn.title = 'Move up';
+                    upBtn.style.cssText = 'background: none; border: none; color: #999; cursor: pointer; padding: 0 4px; font-size: 14px;';
+                    upBtn.addEventListener('click', () => this.moveWaypointUp(point.index));
+                    controls.appendChild(upBtn);
+                }
+                
+                // Move down button
+                if (!isLast) {
+                    const downBtn = document.createElement('button');
+                    downBtn.innerHTML = '↓';
+                    downBtn.title = 'Move down';
+                    downBtn.style.cssText = 'background: none; border: none; color: #999; cursor: pointer; padding: 0 4px; font-size: 14px;';
+                    downBtn.addEventListener('click', () => this.moveWaypointDown(point.index));
+                    controls.appendChild(downBtn);
+                }
+                
+                // Remove button
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '✕';
+                removeBtn.title = 'Remove';
+                removeBtn.style.cssText = 'background: none; border: none; color: #f5222d; cursor: pointer; padding: 0 4px; font-size: 16px;';
+                removeBtn.addEventListener('click', () => this.removeWaypoint(point.index));
+                controls.appendChild(removeBtn);
+                
+                card.appendChild(label);
+                card.appendChild(coords);
+                card.appendChild(controls);
+            } else {
+                // Just label and coords for start/end
+                card.appendChild(label);
+                card.appendChild(coords);
+            }
+            
+            // Simple styling for cards
+            card.style.cssText = `
+                display: flex;
+                align-items: center;
+                padding: 8px 12px;
+                background: #f9f9f9;
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                margin-bottom: 6px;
+            `;
+            
+            display.appendChild(card);
+        });
+    }
+    
+    /**
+     * Move waypoint up in the list
+     */
+    moveWaypointUp(index) {
+        if (index <= 0) return; // Can't move up the first waypoint
+        
+        // Swap with previous waypoint
+        const temp = this.waypoints[index];
+        this.waypoints[index] = this.waypoints[index - 1];
+        this.waypoints[index - 1] = temp;
+        
+        // Swap markers too
+        const tempMarker = this.waypointMarkers[index];
+        this.waypointMarkers[index] = this.waypointMarkers[index - 1];
+        this.waypointMarkers[index - 1] = tempMarker;
+        
+        // Update icons to reflect new order
+        if (this.waypointMarkers[index]) {
+            this.waypointMarkers[index].setIcon(this.createWaypointMarker(index));
+        }
+        if (this.waypointMarkers[index - 1]) {
+            this.waypointMarkers[index - 1].setIcon(this.createWaypointMarker(index - 1));
+        }
+        
+        this.updateWaypointsList();
+        console.log(`📍 Moved waypoint ${index + 1} up to position ${index}`);
+    }
+    
+    /**
+     * Move waypoint down in the list
+     */
+    moveWaypointDown(index) {
+        if (index >= this.waypoints.length - 1) return; // Can't move down the last waypoint
+        
+        // Swap with next waypoint
+        const temp = this.waypoints[index];
+        this.waypoints[index] = this.waypoints[index + 1];
+        this.waypoints[index + 1] = temp;
+        
+        // Swap markers too
+        const tempMarker = this.waypointMarkers[index];
+        this.waypointMarkers[index] = this.waypointMarkers[index + 1];
+        this.waypointMarkers[index + 1] = tempMarker;
+        
+        // Update icons to reflect new order
+        if (this.waypointMarkers[index]) {
+            this.waypointMarkers[index].setIcon(this.createWaypointMarker(index));
+        }
+        if (this.waypointMarkers[index + 1]) {
+            this.waypointMarkers[index + 1].setIcon(this.createWaypointMarker(index + 1));
+        }
+        
+        this.updateWaypointsList();
+        console.log(`📍 Moved waypoint ${index + 1} down to position ${index + 2}`);
     }
 
     showElevationProfile(routeData) {
@@ -2124,7 +2358,7 @@ class QuantaRouteDemo {
 
         // Create highlighted segment layer with vivid styling
         this.currentHighlightedSegment = L.polyline(segmentCoordinates, {
-            color: '#FFEF44',
+            color: '#ffef44',
             weight: 6,
             opacity: 0.9,
             smoothFactor: 1.0,
@@ -2651,7 +2885,7 @@ class QuantaRouteDemo {
             car: '#00008B',          // Dark blue
             bicycle: '#10b981',      // Green
             foot: '#f59e0b',         // Orange
-            motorcycle: '#ef4444'    // Red
+            motorcycle: '#A544EF'    // Violet
         };
         return colors[profile] || '#64748b';
     }
@@ -2680,12 +2914,256 @@ class QuantaRouteDemo {
         return `rgb(${newR}, ${newG}, ${newB})`;
     }
 
+    /**
+     * Calculate optimized route using TSP + QuantaRoute for multi-point routing
+     * Endpoint: /v1/routing/optimized
+     */
+    async calculateOptimizedRoute() {
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        if (loadingOverlay) {
+            loadingOverlay.style.display = 'flex';
+        }
+
+        const startPos = this.startMarker.getLatLng();
+        const endPos = this.endMarker.getLatLng();
+        const validWaypoints = this.waypoints.filter(wp => wp !== null);
+
+        try {
+            // IMPORTANT: Include start and end IN the waypoints array
+            // This ensures we get ALL segment routes (start→wp1, wp1→wp2, wp2→end)
+            const allWaypoints = [
+                [startPos.lat, startPos.lng],  // Include start
+                ...validWaypoints.map(wp => [wp.lat, wp.lng]),  // Intermediate waypoints
+                [endPos.lat, endPos.lng]  // Include end
+            ];
+            
+            const routeData = {
+                start: [startPos.lat, startPos.lng],
+                end: [endPos.lat, endPos.lng],
+                waypoints: allWaypoints,  // Send ALL points including start and end
+                profile: this.currentProfile
+            };
+
+            console.log('📤 Sending request to /routing/optimized with data:', routeData);
+            console.log('🔍 OPTIMIZED REQUEST SUMMARY:');
+            console.log('   Endpoint:', `${this.apiBaseUrl}/routing/optimized`);
+            console.log('   Start:', routeData.start);
+            validWaypoints.forEach((wp, idx) => {
+                console.log(`   Waypoint ${idx + 1}:`, [wp.lat, wp.lng]);
+            });
+            console.log('   End:', routeData.end);
+            console.log('   Profile:', this.currentProfile);
+            console.log('   Total waypoints sent (including start/end):', allWaypoints.length);
+            console.log('   Expected trip segments:', allWaypoints.length - 1);
+
+            const response = await this.apiCall('routing/optimized', {
+                method: 'POST',
+                body: JSON.stringify(routeData)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Optimized routing API error:', errorText);
+                
+                if (response.status === 404) {
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch {
+                        errorData = { detail: errorText };
+                    }
+                    
+                    this.showStatusMessage(
+                        `${errorData.detail || 'No optimized route found through waypoints.'}`, 
+                        'error'
+                    );
+                    return;
+                }
+                
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('📥 API Response from /routing/optimized:', result);
+            
+            // Analyze response
+            console.log('🔍 OPTIMIZED RESPONSE ANALYSIS:');
+            if (result.route || result.trips) {
+                console.log('   ✅ Optimized route received');
+                console.log('   Algorithm:', result.algorithm || 'TSP + QuantaRoute');
+                console.log('   Compute time:', result.compute_time_ms?.toFixed(0), 'ms');
+                console.log('   Waypoints visited:', result.waypoints?.length || 0);
+                
+                // Check if we have multiple trip segments (one per waypoint segment)
+                if (result.trips && result.trips.length > 0) {
+                    console.log('   📦 Trip segments found:', result.trips.length);
+                    
+                    // We might have multiple trips - need to stitch them together
+                    // OR trips might be an array with a single combined trip
+                    // Let's check the structure
+                    
+                    let allPaths = [];
+                    let allInstructions = [];
+                    let totalDistance = 0;
+                    let totalDuration = 0;
+                    
+                    // Process each trip segment
+                    result.trips.forEach((trip, idx) => {
+                        console.log(`   🔄 Processing trip segment ${idx + 1}/${result.trips.length}`);
+                        
+                        // Extract geometry for this segment
+                        let geometry;
+                        if (trip.geometry) {
+                            if (trip.geometry.geometry) {
+                                geometry = trip.geometry.geometry;
+                            } else {
+                                geometry = trip.geometry;
+                            }
+                        }
+                        
+                        console.log(`      Geometry type: ${geometry?.type || 'unknown'}`);
+                        console.log(`      Raw coordinates count: ${geometry?.coordinates?.length || 0}`);
+                        if (geometry?.coordinates?.length > 0) {
+                            console.log(`      First raw coord: [${geometry.coordinates[0]}]`);
+                            console.log(`      Last raw coord: [${geometry.coordinates[geometry.coordinates.length - 1]}]`);
+                        }
+                        
+                        // Extract path for this segment
+                        const segmentPath = this.extractPathFromGeometry(geometry);
+                        console.log(`      ✅ Extracted path points: ${segmentPath?.length || 0}`);
+                        
+                        if (segmentPath && segmentPath.length > 0) {
+                            console.log(`      First converted point: [${segmentPath[0]}]`);
+                            console.log(`      Last converted point: [${segmentPath[segmentPath.length - 1]}]`);
+                            
+                            // Avoid duplicating connection points between segments
+                            if (allPaths.length > 0 && idx > 0) {
+                                // Skip first point of subsequent segments (it's the same as last point of previous)
+                                const pointsAdded = segmentPath.length - 1;
+                                allPaths.push(...segmentPath.slice(1));
+                                console.log(`      📌 Added ${pointsAdded} points (skipped duplicate connection point)`);
+                            } else {
+                                allPaths.push(...segmentPath);
+                                console.log(`      📌 Added all ${segmentPath.length} points (first segment)`);
+                            }
+                            console.log(`      📍 Running total: ${allPaths.length} points`);
+                        } else {
+                            console.error(`      ❌ ERROR: No path extracted for segment ${idx + 1}!`);
+                        }
+                        
+                        // Extract instructions from this trip segment
+                        // Instructions can be in trip.legs[0].steps or trip.instructions
+                        let segmentInstructions = [];
+                        if (trip.legs && trip.legs.length > 0 && trip.legs[0].steps) {
+                            segmentInstructions = trip.legs[0].steps;
+                            console.log(`      📋 Found ${segmentInstructions.length} instructions from legs[0].steps`);
+                        } else if (trip.instructions && trip.instructions.length > 0) {
+                            segmentInstructions = trip.instructions;
+                            console.log(`      📋 Found ${segmentInstructions.length} instructions from trip.instructions`);
+                        } else {
+                            console.log(`      ⚠️ No instructions found for segment ${idx + 1}`);
+                        }
+                        
+                        // Add segment marker instruction if this is not the first segment
+                        if (idx > 0 && segmentInstructions.length > 0) {
+                            // Add a waypoint arrival instruction
+                            allInstructions.push({
+                                instruction: `🎯 Waypoint ${idx} reached - Continue to next stop`,
+                                distance: 0,
+                                duration: 0,
+                                name: `Waypoint ${idx}`,
+                                maneuver: { type: 'waypoint' }
+                            });
+                        }
+                        
+                        // Add all instructions from this segment
+                        allInstructions.push(...segmentInstructions);
+                        console.log(`      ✅ Total instructions so far: ${allInstructions.length}`);
+                        
+                        totalDistance += trip.distance || 0;
+                        totalDuration += trip.duration || 0;
+                    });
+                    
+                    console.log('   📍 Total stitched path points:', allPaths.length);
+                    console.log('   📋 Total stitched instructions:', allInstructions.length);
+                    console.log('   📏 Total distance:', (totalDistance / 1000).toFixed(2), 'km');
+                    console.log('   ⏱️ Total duration:', (totalDuration / 60).toFixed(1), 'min');
+                    
+                    result.path = allPaths;
+                    result.instructions = allInstructions;
+                    result.distance_km = totalDistance / 1000;
+                    result.duration_min = totalDuration / 60;
+                    
+                } else {
+                    // Fallback to route data
+                    console.log('   Using route data (no trips)');
+                    result.path = this.extractPathFromGeometry(result.route?.geometry);
+                    result.distance_km = result.route?.distance / 1000 || 0;
+                    result.duration_min = result.route?.duration / 60 || 0;
+                }
+                
+                console.log('   📍 Final path points:', result.path?.length || 0);
+                console.log('   📍 First point:', result.path?.[0]);
+                console.log('   📍 Last point:', result.path?.[result.path.length - 1]);
+                
+                if (result.path?.length < 10) {
+                    console.warn('   ⚠️ WARNING: Very few path points - might be straight line!');
+                }
+                
+                result.algorithm = result.algorithm || 'TSP + QuantaRoute';
+                result.compute_time_ms = result.compute_time_ms || 0;
+                result.elevation_profile = [];
+                result.elevation_stats = null;
+                // Note: instructions are now properly extracted from trip segments above
+                if (!result.instructions) {
+                    result.instructions = [];
+                }
+                
+                this.displaySingleRoute(result);
+                this.showStatusMessage(
+                    `✅ Optimized route through ${validWaypoints.length} waypoint${validWaypoints.length > 1 ? 's' : ''} - ${result.distance_km.toFixed(1)}km in ${result.duration_min.toFixed(0)} min!`, 
+                    'success'
+                );
+            } else {
+                console.error('   ❌ No route found in optimized response');
+                this.showStatusMessage('No optimized route found through waypoints', 'error');
+            }
+            
+        } catch (error) {
+            console.error('Optimized routing error:', error);
+            this.showStatusMessage(`Optimized routing failed: ${error.message}`, 'error');
+        } finally {
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+        }
+    }
+
     // Override the existing calculateRoute method to support profiles
     async calculateRoute() {
         if (!this.startMarker || !this.endMarker) {
             this.showStatusMessage('Please set both start and destination points', 'error');
             return;
         }
+        
+        // Check if we have waypoints - use optimized routing endpoint (requires 2+ waypoints)
+        const validWaypoints = this.waypoints.filter(wp => wp !== null);
+        if (validWaypoints.length >= 2) {
+            console.log('🔄 Optimized routing activated:', validWaypoints.length, 'waypoints');
+            this.showStatusMessage(
+                `🎯 Calculating optimized route through ${validWaypoints.length} waypoints (TSP optimization)...`, 
+                'info'
+            );
+            return await this.calculateOptimizedRoute();
+        } else if (validWaypoints.length === 1) {
+            console.log('⚠️ Single waypoint detected - using regular routing with waypoint');
+            this.showStatusMessage(
+                `🎯 Calculating route through 1 waypoint...`, 
+                'info'
+            );
+            // Fall through to regular routing which supports single waypoint
+        }
+        
         const loadingOverlay = document.getElementById('loadingOverlay');
         if (loadingOverlay) {
             loadingOverlay.style.display = 'flex';
@@ -2718,10 +3196,16 @@ class QuantaRouteDemo {
                 };
 
                 // Add waypoints if any
+                console.log('🔍 DEBUG: Waypoints array before processing:', this.waypoints);
+                console.log('🔍 DEBUG: Waypoints array length:', this.waypoints.length);
+                
                 if (this.waypoints.length > 0) {
-                    routeData.waypoints = this.waypoints
-                        .filter(wp => wp !== null)
-                        .map(wp => [wp.lat, wp.lng]);
+                    const filteredWaypoints = this.waypoints.filter(wp => wp !== null);
+                    console.log('🔍 DEBUG: Filtered waypoints (non-null):', filteredWaypoints);
+                    
+                    routeData.waypoints = filteredWaypoints.map(wp => [wp.lat, wp.lng]);
+                    console.log('✅ Added waypoints to route calculation:', routeData.waypoints);
+                    
                     this.log(`📍 Added ${routeData.waypoints.length} waypoints to route calculation`);
                     this.showStatusMessage(
                         `🎯 Calculating route with ${routeData.waypoints.length} waypoint${routeData.waypoints.length > 1 ? 's' : ''}...`, 
@@ -2729,6 +3213,15 @@ class QuantaRouteDemo {
                     );
                 }
 
+                console.log('📤 Sending request to /routing/alternatives with data:', routeData);
+                console.log('🔍 REQUEST SUMMARY:');
+                console.log('   Endpoint:', `${this.apiBaseUrl}/routing/alternatives`);
+                console.log('   Start:', routeData.start);
+                console.log('   End:', routeData.end);
+                console.log('   Waypoints:', routeData.waypoints || 'none');
+                console.log('   Profile:', routeData.profile);
+                console.log('   Method:', routeData.method);
+                
                 this.log('🛣️ Calculating alternative routes');
                 
                 const response = await this.apiCall('routing/alternatives', {
@@ -2760,6 +3253,37 @@ class QuantaRouteDemo {
                 }
 
                 const result = await response.json();
+                console.log('📥 API Response from /routing/alternatives:', result);
+                
+                // Analyze response for waypoint processing
+                console.log('🔍 RESPONSE ANALYSIS:');
+                const optimalRoute = result.optimal_route || result.route;
+                if (optimalRoute) {
+                    const pathLength = optimalRoute.geometry?.coordinates?.length || optimalRoute.path?.length || 0;
+                    console.log('   Route path points:', pathLength);
+                    console.log('   Distance:', optimalRoute.distance || optimalRoute.distance_km, 'km');
+                    console.log('   Duration:', optimalRoute.duration || optimalRoute.duration_min, 'min');
+                    
+                    // Check if waypoints are mentioned in instructions
+                    const instructions = optimalRoute.instructions || [];
+                    const waypointInstructions = instructions.filter(i => 
+                        i.instruction?.toLowerCase().includes('waypoint') || 
+                        i.instruction?.toLowerCase().includes('via')
+                    );
+                    console.log('   Instructions:', instructions.length, 'steps');
+                    console.log('   Waypoint-related instructions:', waypointInstructions.length);
+                    
+                    if (waypointInstructions.length > 0) {
+                        console.log('   ✅ Backend processed waypoints! Found waypoint instructions:');
+                        waypointInstructions.forEach(i => console.log('      -', i.instruction));
+                    } else if (routeData.waypoints && routeData.waypoints.length > 0) {
+                        console.warn('   ⚠️ Waypoints were sent but not reflected in instructions');
+                        console.warn('   ⚠️ Backend may not support waypoints on this endpoint');
+                    }
+                } else {
+                    console.error('   ❌ No route found in response');
+                }
+                
                 this.log('✅ Alternative routes calculated');
                 this.displayAlternativeRoutesResponse(result);
                 
@@ -2774,10 +3298,16 @@ class QuantaRouteDemo {
                 };
 
                 // Add waypoints if any
+                console.log('🔍 DEBUG: Waypoints array before processing:', this.waypoints);
+                console.log('🔍 DEBUG: Waypoints array length:', this.waypoints.length);
+                
                 if (this.waypoints.length > 0) {
-                    routeData.waypoints = this.waypoints
-                        .filter(wp => wp !== null)
-                        .map(wp => [wp.lat, wp.lng]);
+                    const filteredWaypoints = this.waypoints.filter(wp => wp !== null);
+                    console.log('🔍 DEBUG: Filtered waypoints (non-null):', filteredWaypoints);
+                    
+                    routeData.waypoints = filteredWaypoints.map(wp => [wp.lat, wp.lng]);
+                    console.log('✅ Added waypoints to single route calculation:', routeData.waypoints);
+                    
                     this.log(`📍 Added ${routeData.waypoints.length} waypoints to single route calculation`);
                     this.showStatusMessage(
                         `🎯 Calculating route with ${routeData.waypoints.length} waypoint${routeData.waypoints.length > 1 ? 's' : ''}...`, 
@@ -2785,6 +3315,15 @@ class QuantaRouteDemo {
                     );
                 }
 
+                console.log('📤 Sending request to /routing with data:', routeData);
+                console.log('🔍 REQUEST SUMMARY:');
+                console.log('   Endpoint:', `${this.apiBaseUrl}/routing`);
+                console.log('   Start:', routeData.start);
+                console.log('   End:', routeData.end);
+                console.log('   Waypoints:', routeData.waypoints || 'none');
+                console.log('   Profile:', routeData.profile);
+                console.log('   Algorithm:', routeData.algorithm);
+                
                 this.log('🚀 Calculating single route');
 
                 const response = await this.apiCall('routing', {
@@ -2816,6 +3355,37 @@ class QuantaRouteDemo {
                 }
 
                 const result = await response.json();
+                console.log('📥 API Response from /routing:', result);
+                
+                // Analyze response for waypoint processing
+                console.log('🔍 RESPONSE ANALYSIS:');
+                const route = result.route || result;
+                if (route) {
+                    const pathLength = route.geometry?.coordinates?.length || route.path?.length || 0;
+                    console.log('   Route path points:', pathLength);
+                    console.log('   Distance:', route.distance || route.distance_km, 'km');
+                    console.log('   Duration:', route.duration || route.duration_min, 'min');
+                    
+                    // Check if waypoints are mentioned in instructions
+                    const instructions = route.instructions || [];
+                    const waypointInstructions = instructions.filter(i => 
+                        i.instruction?.toLowerCase().includes('waypoint') || 
+                        i.instruction?.toLowerCase().includes('via')
+                    );
+                    console.log('   Instructions:', instructions.length, 'steps');
+                    console.log('   Waypoint-related instructions:', waypointInstructions.length);
+                    
+                    if (waypointInstructions.length > 0) {
+                        console.log('   ✅ Backend processed waypoints! Found waypoint instructions:');
+                        waypointInstructions.forEach(i => console.log('      -', i.instruction));
+                    } else if (routeData.waypoints && routeData.waypoints.length > 0) {
+                        console.warn('   ⚠️ Waypoints were sent but not reflected in instructions');
+                        console.warn('   ⚠️ Backend may not support waypoints on this endpoint');
+                        console.warn('   💡 Try enabling "Show Alternative Routes" for waypoint support');
+                    }
+                } else {
+                    console.error('   ❌ No route found in response');
+                }
                 
                 // Convert GeoJSON geometry to [lat, lng] path for single routes
                 if (result.route && result.route.geometry) {
@@ -2855,40 +3425,51 @@ class QuantaRouteDemo {
      * Handles both GeoJSON Feature and Geometry objects
      */
     extractPathFromGeometry(geometry) {
-        if (!geometry) return [];
+        if (!geometry) {
+            console.warn('⚠️ extractPathFromGeometry: geometry is null/undefined');
+            return [];
+        }
         
         // Handle GeoJSON Feature (has geometry.coordinates)
         if (geometry.geometry && geometry.geometry.coordinates) {
+            console.log('📐 extractPathFromGeometry: Unwrapping GeoJSON Feature');
             geometry = geometry.geometry;
         }
         
         // Handle GeoJSON Geometry (has coordinates directly)
         if (geometry.coordinates && Array.isArray(geometry.coordinates)) {
             const coords = geometry.coordinates;
+            console.log(`📐 extractPathFromGeometry: Converting ${coords.length} GeoJSON coordinates from [lon,lat] to [lat,lng]`);
             
             // Convert [lon, lat] to [lat, lng] for Leaflet
-            return coords.map(coord => {
+            const converted = coords.map(coord => {
                 if (Array.isArray(coord) && coord.length >= 2) {
                     return [coord[1], coord[0]];  // Swap lon,lat to lat,lng
                 }
                 return coord;
             });
+            
+            console.log(`✅ extractPathFromGeometry: Converted ${converted.length} points`);
+            return converted;
         }
         
         // If it's already an array of coordinates (demo backend format)
         if (Array.isArray(geometry) && geometry.length > 0) {
+            console.log(`📐 extractPathFromGeometry: Processing array of ${geometry.length} coordinates`);
             // Check if first element looks like [lon, lat] (lon > 90 indicates GeoJSON format)
             if (geometry[0] && geometry[0].length === 2) {
                 if (Math.abs(geometry[0][0]) > 90) {
                     // Looks like [lon, lat], convert to [lat, lng]
+                    console.log('   Converting from [lon,lat] to [lat,lng]');
                     return geometry.map(coord => [coord[1], coord[0]]);
                 }
             }
             // Already [lat, lng] format
+            console.log('   Already in [lat,lng] format');
             return geometry;
         }
         
-        console.warn('⚠️ Unknown geometry format:', geometry);
+        console.warn('⚠️ extractPathFromGeometry: Unknown geometry format:', geometry);
         return [];
     }
 
@@ -3045,6 +3626,14 @@ class QuantaRouteDemo {
     }
 
     displaySingleRoute(routeData) {
+        console.log('🎨 displaySingleRoute called with:', {
+            hasPath: !!routeData.path,
+            pathLength: routeData.path?.length || 0,
+            distance: routeData.distance_km,
+            duration: routeData.duration_min,
+            isOptimizedRoute: routeData.algorithm?.includes('TSP')
+        });
+        
         // Clear existing route
         if (this.routeLayer) {
             this.map.removeLayer(this.routeLayer);
@@ -3055,23 +3644,42 @@ class QuantaRouteDemo {
 
         // Display route
         if (routeData.path && routeData.path.length > 1) {
-            // Get clicked coordinates
-            const clickedStart = this.startMarker ? this.startMarker.getLatLng() : null;
-            const clickedEnd = this.endMarker ? this.endMarker.getLatLng() : null;
+            console.log(`✅ Drawing route with ${routeData.path.length} points`);
+            console.log(`   First point: [${routeData.path[0]}]`);
+            console.log(`   Last point: [${routeData.path[routeData.path.length - 1]}]`);
             
-            // Draw connector lines and get adjusted route path
-            const adjustedPath = this.drawRouteWithConnectors(routeData.path, clickedStart, clickedEnd);
+            // For multi-point/optimized routes, the path is already complete from start to end
+            // through all waypoints - NO NEED for connector lines!
+            // The backend provides turn-by-turn routing for ALL segments.
+            const isOptimizedRoute = routeData.algorithm && routeData.algorithm.includes('TSP');
+            let finalPath;
             
-            this.routeLayer = L.polyline(adjustedPath, {
+            if (isOptimizedRoute) {
+                // Use path directly - it's already complete with all segments stitched
+                finalPath = routeData.path;
+                console.log('🎯 Optimized multi-point route - using complete stitched path (NO connectors)');
+            } else {
+                // For regular routes, use connector lines if needed (legacy behavior)
+                const clickedStart = this.startMarker ? this.startMarker.getLatLng() : null;
+                const clickedEnd = this.endMarker ? this.endMarker.getLatLng() : null;
+                finalPath = this.drawRouteWithConnectors(routeData.path, clickedStart, clickedEnd);
+                console.log('📍 Regular route - checking for connector lines');
+            }
+            
+            console.log(`   Final path length: ${finalPath.length} points`);
+            
+            this.routeLayer = L.polyline(finalPath, {
                 color: this.getProfileColor(this.currentProfile),
                 weight: 14,
                 opacity: 0.8,
                 lineCap: 'round',
                 lineJoin: 'round'
             }).addTo(this.map);
+            
+            console.log('✅ Route polyline added to map');
 
             // Add distance markers along the route
-            this.addDistanceMarkersToRoute(adjustedPath, routeData.distance_km);
+            this.addDistanceMarkersToRoute(finalPath, routeData.distance_km);
 
             // Fit map to route
             this.map.fitBounds(this.routeLayer.getBounds(), { padding: [30, 30] });
@@ -3479,6 +4087,9 @@ class QuantaRouteDemo {
 
         // Close any open popups
         this.map.closePopup();
+        
+        // Clear route points display panel
+        this.updateRoutePointsDisplay();
 
         this.showStatusMessage('🎯 Click anywhere on the map to set your start point!', 'info');
     }

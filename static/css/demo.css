@@ -124,18 +124,18 @@ body {
 }
 
 .sidebar-header {
-    padding: 1.5rem 1.25rem 1.25rem;
+    padding: 1rem 1rem 0.75rem;
     border-bottom: 1px solid var(--border-light);
     background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 .logo-section {
     text-align: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .app-title {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 800;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     -webkit-background-clip: text;
@@ -147,29 +147,29 @@ body {
 }
 
 .app-subtitle {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
     font-weight: 500;
 }
 
 .stats-row {
     display: flex;
-    gap: 1rem;
+    gap: 0.5rem;
     justify-content: center;
 }
 
 .stat-badge {
     background: rgba(99, 102, 241, 0.1);
     border: 1px solid rgba(99, 102, 241, 0.2);
-    border-radius: var(--radius-lg);
-    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    padding: 0.4rem 0.6rem;
     text-align: center;
     flex: 1;
 }
 
 .stat-number {
     display: block;
-    font-size: 1.25rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--primary-color);
     line-height: 1.2;
@@ -177,22 +177,22 @@ body {
 
 .stat-label {
     display: block;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
 }
 
 /* Sidebar Content */
 .sidebar-content {
     flex: 1;
-    padding: 1.25rem;
+    padding: 0.75rem;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 0.75rem;
 }
 
 /* Overflow protection for specific text elements only */
@@ -238,10 +238,38 @@ body {
     word-wrap: break-word;
 }
 
+/* Status card - make it smaller */
+.status-card {
+    padding: 0.5rem 0.75rem;
+}
+
 /* Allow scrolling in control cards for forms and long content */
 .control-card {
-    overflow-y: visible;
+    overflow-y: auto;
     overflow-x: hidden;
+    max-height: calc(100vh - 280px);
+    flex: 1;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Scrollbar styling for control card */
+.control-card::-webkit-scrollbar {
+    width: 6px;
+}
+
+.control-card::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.control-card::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+
+.control-card::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
 }
 
 .status-card:hover,
@@ -816,15 +844,16 @@ input:checked + .toggle-slider:before {
 
 /* Sidebar Footer */
 .sidebar-footer {
-    padding: 1.5rem;
+    padding: 0.75rem;
     border-top: 1px solid var(--border-light);
     background: var(--bg-secondary);
 }
 
 .footer-text {
     text-align: center;
-    font-size: 0.875rem;
+    font-size: 0.7rem;
     color: var(--text-secondary);
+    line-height: 1.3;
 }
 
 .footer-text a {
@@ -1059,20 +1088,24 @@ input:checked + .toggle-slider:before {
     }
     
     .sidebar-header {
-        padding: 1.5rem 1rem 1rem;
+        padding: 0.75rem 0.75rem 0.5rem;
     }
     
     .app-title {
-        font-size: 1.6rem;
+        font-size: 1.4rem;
     }
     
     .sidebar-content {
-        padding: 1rem;
-        gap: 1rem;
+        padding: 0.75rem;
+        gap: 0.75rem;
     }
     
     .sidebar-footer {
-        padding: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .control-card {
+        max-height: calc(100vh - 240px);
     }
     
     .main-content {
@@ -1142,37 +1175,45 @@ input:checked + .toggle-slider:before {
 
 @media (max-width: 480px) {
     .mobile-header-content {
-        padding: 0.75rem;
+        padding: 0.5rem;
     }
     
     .mobile-title {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
     }
     
     .app-title {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
+    }
+    
+    .sidebar-header {
+        padding: 0.5rem;
     }
     
     .stats-row {
         flex-wrap: wrap;
-        gap: 0.5rem;
+        gap: 0.4rem;
     }
     
     .stat-badge {
-        min-width: 80px;
-        padding: 0.5rem;
+        min-width: 70px;
+        padding: 0.3rem 0.5rem;
     }
     
     .stat-number {
-        font-size: 1rem;
+        font-size: 0.85rem;
     }
     
     .stat-label {
-        font-size: 0.7rem;
+        font-size: 0.6rem;
     }
     
     .card-title {
         font-size: 0.9rem;
+    }
+    
+    .control-card {
+        max-height: calc(100vh - 200px);
     }
     
     .metric-value {
@@ -1257,21 +1298,37 @@ input:checked + .toggle-slider:before {
         padding: 10px 14px;
         margin: 0 12px 12px 12px;
     }
+    
+    .footer-text {
+        font-size: 0.65rem;
+    }
 }
 
 /* Extra small devices */
 @media (max-width: 360px) {
     .app-title {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
     
-    .stat-badge {
-        min-width: 70px;
+    .sidebar-header {
         padding: 0.4rem;
     }
     
+    .stat-badge {
+        min-width: 65px;
+        padding: 0.25rem 0.4rem;
+    }
+    
     .stat-number {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
+    }
+    
+    .stat-label {
+        font-size: 0.55rem;
+    }
+    
+    .control-card {
+        max-height: calc(100vh - 180px);
     }
     
     .metric-value {
@@ -1293,8 +1350,16 @@ input:checked + .toggle-slider:before {
     }
     
     .sidebar-content {
-        padding: 0.75rem;
-        gap: 0.75rem;
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+    
+    .sidebar-footer {
+        padding: 0.4rem;
+    }
+    
+    .footer-text {
+        font-size: 0.6rem;
     }
 }
 
@@ -1524,6 +1589,38 @@ input:checked + .toggle-slider:before {
     border-color: var(--primary-color);
     color: var(--primary-color);
     background: rgba(99, 102, 241, 0.05);
+}
+
+/* Route Points Display with A, B, C Labels */
+/* Route Points Display - Simplified and Compact */
+.route-points-display {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.route-point-card {
+    transition: all 0.2s ease;
+}
+
+.route-point-card:hover {
+    background: #f0f0f0 !important;
+    transform: translateX(2px);
+}
+
+.route-point-label {
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.route-point-coords {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.route-point-controls button:hover {
+    opacity: 0.7;
+    transform: scale(1.15);
 }
 
 /* Compact Transport Mode */
