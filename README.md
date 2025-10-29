@@ -1,220 +1,160 @@
-# 🚀 QuantaRoute Navigation Demo
+# 🚀 QuantaRoute Maps - Navigation Demo
 
-**Advanced navigation showcase demonstrating QuantaRoute's efficiency as the world's fastest routing engine for Bengaluru!**
-
----
-
-## 🎯 **Navigation Demo Features**
-
-This comprehensive demo showcases why QuantaRoute is the **most efficient routing engine** available:
-
-### 🗺️ **Complete Navigation Interface**
-- **Modern UI**: Intuitive navigation interface with Bengaluru POI search
-- **Real-time Routing**: Instant route calculation with visual feedback
-- **Interactive Map**: Click-to-route with dynamic marker placement
-
-### 🚗🚲🚶 **Multi-Profile Routing**
-- **🚗 Driving**: Optimized for Bengaluru roads with traffic patterns and restrictions
-- **🚲 Cycling**: Bike-friendly routes with gradient awareness for Bengaluru's hilly terrain  
-- **🚶 Walking**: Pedestrian pathways and accessibility-aware routing
-
-### 🛣️ **Advanced Routing Features**
-- **Multipoint Routing**: Add multiple waypoints for complex journeys
-- **📊 Elevation Profiles**: Visual elevation charts for Bengaluru's hilly terrain
-- **📍 POI Search**: Search Bengaluru landmarks - Airport, MG Road, Whitefield, Koramangala
-- **⚡ Performance Analytics**: Real-time algorithm performance comparison
+**Advanced navigation showcase demonstrating QuantaRoute's breakthrough SSSP O(m·log^{2/3}n) routing algorithm on Bengaluru's road network.**
 
 ---
 
-## 🚀 **Quick Start**
+## 🎯 Overview
 
-### **Prerequisites**
+QuantaRoute Maps is a demonstration of the QuantaRoute routing engine, showcasing:
+- **SSSP O(m·log^{2/3}n)** algorithm (theoretically faster than traditional Dijkstra)
+- Real-time routing on Bengaluru's road network (~750K nodes, 1.6M edges)
+- Multi-profile routing (car, bicycle, foot, motorcycle)
+- Interactive map interface with turn-by-turn navigation
 
-First, start the main QuantaRoute API server (in a separate terminal):
+---
 
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.8+
+- Modern web browser
+
+### Installation
 ```bash
-cd /Users/saikat.maiti/Documents/sssp
-python start_api_server.py
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-This loads the Bengaluru road network once and keeps it cached for instant routing.
-
-### **🎯 Navigation Demo (Unified Architecture)**
-
+### Run the Demo
 ```bash
-cd demo-app
+# Start the demo server
 python start_demo.py
 ```
 
-**Experience:**
-- Complete navigation interface at http://localhost:3000/frontend/
-- Multi-profile routing with real Bengaluru data (4 profiles: car, bicycle, foot, motorcycle)
-- Location search with popular Bengaluru destinations (Airport, MG Road, Whitefield, Koramangala, etc.)
-- Elevation profiles for Bengaluru's hilly terrain
-- Waypoint management for complex trips
-- **Instant startup** - uses cached graphs from main API server (2-5s vs 30s+ per profile)
+The demo will be available at **http://localhost:3000/**
 
-**Benefits of Unified Architecture:**
-- ⚡ Instant startup (no graph rebuilding)
-- 💾 Uses cached graphs (2-5s vs 210-230s)
-- 🏗️ Single source of truth (production-like setup)
-- 🚀 Real-time performance metrics
+**Note:** The demo connects to the main QuantaRoute API server (port 8080). Ensure the API server is running before starting the demo.
 
 ---
 
-## 🗺️ **Navigation Demo Usage**
+## 🗺️ Using the Demo
 
-### **📍 Setting Up Your Route**
-1. **Search Locations**: Type in search boxes (MG Road, Airport, Whitefield, etc.)
-2. **Or Click Map**: Click anywhere on Bengaluru map to set start/end points
-3. **Choose Profile**: Select 🚗 Driving, 🚲 Cycling, or 🚶 Walking mode
-4. **Add Waypoints**: Use "Add Stop" for multi-destination trips
-
-### **⚡ Advanced Features**
-5. **Calculate Route**: Click to see optimal path with turn-by-turn directions
-6. **View Elevation**: Check elevation profile for cycling/walking routes
-7. **Performance**: See real-time algorithm performance metrics
+1. **Search Locations**: Type Bengaluru landmarks (e.g., "MG Road", "Airport", "Whitefield")
+2. **Click Map**: Click anywhere on the map to set start/end points
+3. **Select Profile**: Choose 🚗 Driving, 🚲 Cycling, or 🚶 Walking mode
+4. **Add Waypoints**: Use "Add Stop" for multi-destination routes
+5. **Calculate Route**: View optimal path with turn-by-turn directions
+6. **View Metrics**: See real-time performance and elevation data
 
 ---
 
-## 🏆 **Why QuantaRoute is Superior**
-
-### **⚡ Performance Breakthrough**
-| Metric | QuantaRoute | Traditional | Improvement |
-|--------|------------|-------------|-------------|
-| **Algorithm** | O(m·log^{2/3}n) | O(m + n log n) | **Theoretical Advantage** |
-| **Route Time** | 50-150ms | 2-5 seconds | **50x Faster** |
-| **Memory Usage** | 15-25 MB | 45-80 MB | **3x More Efficient** |
-| **Network Scale** | Bengaluru highways | Same | **Scales Better** |
-
-### **🎯 Real-World Benefits**
-- **🚗 Navigation Apps**: Ultra-responsive routing for better UX
-- **🚚 Logistics**: Fleet optimization with instant route recalculation  
-- **🌆 Smart Cities**: Real-time traffic management capabilities
-- **📱 Mobile Apps**: Reduced battery usage, instant responses
-
----
-
-## 🔧 **Technical Innovation**
-
-### **🧠 Smart Routing Profiles**
-- **Car Profile**: Bengaluru traffic patterns, turn restrictions, highway optimization
-- **Bicycle Profile**: Gradient-aware routing for Bengaluru's hilly terrain
-- **Walking Profile**: Pedestrian-friendly paths and accessibility features
-
-### **⚡ QuantaRoute Algorithm Advantages**
-- **Breakthrough Complexity**: O(m·log^{2/3}n) vs traditional O(m + n log n)
-- **Real Bengaluru Network**: Highway-focused OSM data with actual road topology
-- **Multi-Profile Support**: Optimized routing for different transport modes
-- **Instant Recalculation**: Dynamic waypoint addition without performance loss
-
-### **🏗️ Architecture Highlights**
-- **FastAPI Backend**: RESTful API with profile-specific routing engines
-- **Interactive Frontend**: Modern web interface with real-time visualization
-- **POI Integration**: Bengaluru landmarks with smart search (Airport, MG Road, Whitefield, etc.)
-- **Elevation Profiles**: Chart.js visualization for Bengaluru's hilly terrain
-
----
-
-## 📁 **Project Structure**
+## 🏗️ Project Structure
 
 ```
-demo-app/
-├── README.md                     # This guide
-├── start_demo.py                 # 🎯 Unified demo launcher (uses main API)
-├── requirements.txt              # Python dependencies
-├── frontend/
-│   └── index.html              # Clean navigation interface
-└── static/
-    ├── css/demo.css            # Modern styling
-    └── js/
-        └── demo.js            # Navigation functionality (connects to port 8080)
+quantaroute-maps/
+├── README.md                    # This guide
+├── start_demo.py                # Demo launcher script
+├── start-demo.sh                # Shell script launcher
+├── requirements.txt             # Python dependencies
+│
+├── frontend/                    # Frontend HTML
+│   └── index.html
+│
+├── static/                      # Static assets
+│   ├── css/
+│   │   └── demo.css            # Styling
+│   └── js/
+│       ├── demo.js             # Main demo logic
+│       ├── demo-config.js      # Configuration
+│       └── exploration_visualizer.js
+│
+├── tests/                       # Test scripts
+│   ├── test_backend_startup.py
+│   ├── test_routing_issue.py
+│   └── ...
+│
+└── docs/                        # Documentation
+    ├── archived/                # Historical docs
+    ├── deployment/              # Deployment guides
+    │   └── ARCHITECTURE_AND_DEPLOYMENT.md
+    ├── fixes/                   # Fix documentation
+    └── setup/                   # Setup guides
 ```
 
-**Note:** This demo connects to the main QuantaRoute API server (port 8080) rather than starting its own backend. This provides:
-- Instant startup using cached graphs
-- Single source of truth for routing data
-- Production-like architecture
+---
+
+## ⚡ Performance
+
+| Metric | QuantaRoute | Traditional Dijkstra |
+|--------|-------------|---------------------|
+| **Algorithm** | O(m·log^{2/3}n) | O(m + n log n) |
+| **Route Time** | 50-150ms | 2-5 seconds |
+| **Network** | 756K nodes, 1.6M edges | Same |
 
 ---
 
-## 🎯 **Demo Showcase Goals**
+## 🔧 Technical Details
 
-### **🏆 Efficiency Demonstration**
-- **Visual Performance**: See QuantaRoute's 50x speed advantage in real-time
-- **Multi-Modal Excellence**: Optimized routing for cars, bicycles, and pedestrians
-- **Advanced Features**: Multipoint routing, elevation profiles, POI search
-- **Production Ready**: Complete navigation system on real Singapore roads
+### Algorithm
+- **Primary**: SSSP O(m·log^{2/3}n) (QuantaRoute default)
+- **Reference**: Dijkstra O(m + n log n) (for comparison)
+- **Alternative Routes**: Rust-based with multiple strategies (Adaptive, Perturbation, Highway)
 
-### **🌟 Why This Matters**
-- **🚗 Navigation Innovation**: Next-generation routing for better user experience
-- **🚴 Active Transport**: Smart cycling and walking route optimization
-- **🏙️ Urban Planning**: Efficient routing supports sustainable transport
-- **💡 Algorithm Research**: Real-world validation of theoretical breakthroughs
+### Routing Profiles
+- **Car**: Optimized for highways and traffic patterns
+- **Bicycle**: Gradient-aware routing for hilly terrain
+- **Foot**: Pedestrian pathways
+- **Motorcycle**: Two-wheeler specific routing
+
+### Data
+- **Region**: Bengaluru, India
+- **Network**: Highway-focused OSM data
+- **Nodes**: 756,204
+- **Edges**: 1,594,440
+- **Restricted Edges**: 281,700 (17.7%)
 
 ---
 
-## 🛠️ **Setup Requirements**
+## 📚 Documentation
 
-**Quick Install:**
+- **Architecture**: [`docs/deployment/ARCHITECTURE_AND_DEPLOYMENT.md`](docs/deployment/ARCHITECTURE_AND_DEPLOYMENT.md)
+- **Quick Start**: [`docs/setup/00_START_HERE.md`](docs/setup/00_START_HERE.md)
+- **Deployment**: [`docs/deployment/QUICK_DEPLOYMENT_GUIDE.md`](docs/deployment/QUICK_DEPLOYMENT_GUIDE.md)
+
+---
+
+## 🚀 Deployment Options
+
+See [`docs/deployment/ARCHITECTURE_AND_DEPLOYMENT.md`](docs/deployment/ARCHITECTURE_AND_DEPLOYMENT.md) for detailed deployment instructions:
+
+1. **Local Demo** - Run on localhost (current setup)
+2. **Full API Server** - Deploy production API with authentication
+3. **Hybrid** - Demo UI with remote API backend
+
+---
+
+## 🧪 Testing
+
+Run tests to verify functionality:
+
 ```bash
-pip install fastapi uvicorn pandas numpy requests
+# Test backend startup
+python tests/test_backend_startup.py
+
+# Test basic routing
+python tests/test_basic_routing.py
+
+# Test complete demo
+python tests/run-complete-demo.py
 ```
 
-**For Enhanced Features:**
-```bash
-pip install osmium shapely geopandas  # If using real OSM data
-```
+---
 
-**System Requirements:**
-- Python 3.8+
-- 1GB+ RAM (navigation demo)
-- Modern web browser with JavaScript
+## 📄 License
+
+See [LICENSE](LICENSE) for details.
 
 ---
 
-## 🔧 **API Features**
-
-### **🆕 Navigation API Endpoints:**
-- `GET /api/profiles` - Available transport modes
-- `GET /api/search?q=marina` - POI search functionality  
-- `POST /api/route` - Multi-profile routing with waypoints
-- `POST /api/performance-compare` - Algorithm comparison
-
-### **🎨 Frontend Capabilities:**
-- **Responsive Design**: Works on desktop and mobile
-- **Interactive Search**: Singapore POI database integration
-- **Real-time Visualization**: Dynamic route and elevation display
-- **Performance Metrics**: Live algorithm performance comparison
-
----
-
-## 🎉 **Demo Success Checklist**
-
-### **Navigation Demo:**
-- ✅ **URL loads**: http://localhost:3000/frontend/
-- ✅ **Search works**: Type "MG Road" or "Airport" to see POI suggestions
-- ✅ **Multi-profile**: Switch between car/bicycle/walking modes
-- ✅ **Waypoints**: Add multiple stops for complex routes
-- ✅ **Elevation**: View elevation profile for Bengaluru's hilly terrain
-
-### **Performance Demo:**
-- ✅ **Speed comparison**: QuantaRoute vs traditional algorithms
-- ✅ **Real metrics**: Sub-second route calculations
-- ✅ **Visual feedback**: Algorithm complexity differences
-
----
-
-## 🚀 **Achievement: Complete Navigation System**
-
-**🥇 You now have a production-ready navigation demo showcasing QuantaRoute's revolutionary efficiency!**
-
-### **What You've Built:**
-- ⚡ **Fastest Routing**: O(m·log^{2/3}n) algorithm advantage
-- 🗺️ **Complete Navigation**: Full-featured routing interface  
-- 🚴 **Multi-Modal**: Optimized for different transport modes
-- 📊 **Performance Proof**: Visual demonstration of algorithmic superiority
-
----
-
-**🌟 QuantaRoute: Redefining the speed of navigation • Bengaluru road network ready • The future of efficient routing** 🚀
+**🌟 QuantaRoute: Breakthrough routing performance for real-world navigation** 🚀
